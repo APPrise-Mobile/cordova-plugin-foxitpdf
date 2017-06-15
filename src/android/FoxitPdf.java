@@ -31,7 +31,7 @@ public class FoxitPdf extends CordovaPlugin {
         if (action.equals("init")) {
             final String sn = args.getString(0);
             final String key = args.getString(0);
-            this.init(callbackContext);
+            this.init(sn, key, callbackContext);
             return true;
         } else if (action.equals("Preview")){
             final String filePath = args.getString(0);
@@ -42,7 +42,7 @@ public class FoxitPdf extends CordovaPlugin {
         return false;
     }
 
-    private void init(CallbackContext callbackContext) {
+    private void init(final String sn, final String key, final CallbackContext callbackContext) {
         try {
             Library.init(sn, key);
         } catch (PDFException e) {
@@ -54,7 +54,7 @@ public class FoxitPdf extends CordovaPlugin {
         callbackContext.error("Succeed to initialize Foxit library.");
     }
 
-    private void openDoc(final String path, CallbackContext callbackContext) {
+    private void openDoc(final String path, final CallbackContext callbackContext) {
         if (path == null || path.trim().length() < 1) {
             callbackContext.error("Please input validate path.");
             return;
