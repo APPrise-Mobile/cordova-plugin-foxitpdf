@@ -4,17 +4,21 @@
 <dict>
 	<key>files</key>
 	<dict>
+		<key>FoxitRDK_emu</key>
+		<data>
+		6TOFGHXQnzyCNrNJPKvwS8fZiYs=
+		</data>
 		<key>Headers/FSPDFObjC.h</key>
 		<data>
-		NyiN8W6vkRfNa4YcUI4TUnXBryw=
+		WW1eR9BTl6QjyA+Hp7Zu7qU8Iao=
 		</data>
 		<key>Headers/FSPDFViewControl.h</key>
 		<data>
-		5VlTPZqC1QqBlFwNEhX+INMxJlY=
+		ylPtrXPd7MWb6NoRD9y0mdF13tM=
 		</data>
 		<key>Info.plist</key>
 		<data>
-		7d4hhX61sikHQXr06GfUNSITSSs=
+		Naduxso9VE2KvG9lU3x3vpXL9Gc=
 		</data>
 		<key>en.lproj/InfoPlist.strings</key>
 		<dict>
@@ -28,26 +32,37 @@
 	</dict>
 	<key>files2</key>
 	<dict>
+		<key>FoxitRDK_emu</key>
+		<dict>
+			<key>hash</key>
+			<data>
+			6TOFGHXQnzyCNrNJPKvwS8fZiYs=
+			</data>
+			<key>hash2</key>
+			<data>
+			ClV1Bbkte2DOAJoKp/ci8dyN9J60GqqxzRDe0DaY9zI=
+			</data>
+		</dict>
 		<key>Headers/FSPDFObjC.h</key>
 		<dict>
 			<key>hash</key>
 			<data>
-			NyiN8W6vkRfNa4YcUI4TUnXBryw=
+			WW1eR9BTl6QjyA+Hp7Zu7qU8Iao=
 			</data>
 			<key>hash2</key>
 			<data>
-			cCkmOjFXjz0OeLwt2l1hIvsOCOjlZPHwmh+9beNVI0g=
+			ySgE63xBE8FDIk4/rpVbttj5g/tlo5z7WBNcoxLqMnI=
 			</data>
 		</dict>
 		<key>Headers/FSPDFViewControl.h</key>
 		<dict>
 			<key>hash</key>
 			<data>
-			5VlTPZqC1QqBlFwNEhX+INMxJlY=
+			ylPtrXPd7MWb6NoRD9y0mdF13tM=
 			</data>
 			<key>hash2</key>
 			<data>
-			hp6qSqfAHL+XsEixWpLPzlgrDs1jwZ8DkqmMmGasK90=
+			GWfiGCqc/8njK1bnzfr9G9kgxEvthUeaXJQv7o03kJQ=
 			</data>
 		</dict>
 		<key>en.lproj/InfoPlist.strings</key>

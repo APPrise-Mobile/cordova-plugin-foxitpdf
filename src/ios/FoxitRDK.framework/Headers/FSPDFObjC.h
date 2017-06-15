@@ -19,7 +19,7 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-
+#import <UIKit/UIGestureRecognizer.h>
 #import <CoreGraphics/CoreGraphics.h>
 @class FSAnnotIconProviderCallback;
 @class FSPDFDoc;
@@ -39,6 +39,10 @@ extern "C" {
 @class FSDateTime;
 @class FSFileReadCallback;
 @class FSSignature;
+@class FSReflowPage;
+@class FSPDFTextObject;
+@class FSPDFMarkedContent;
+@class FSPDFGraphicsObjects;
 
 /**
  * @name	Macro Definitions for Annotation Icon Name
@@ -75,7 +79,17 @@ extern "C" {
 #define FS_ANNOT_ICONNAME_TEXT_UPARROW				"UpArrow"
 /** @brief	Note icon name: Up-left Arrow. */
 #define FS_ANNOT_ICONNAME_TEXT_UPLEFTARROW			"UpLeftArrow"
-
+    
+/** @brief	File attachment icon type: Graph. */
+#define FS_ANNOT_ICONNAME_FILEATTACH_GRAPH			"Graph"
+/** @brief	File attachment icon type: PaperClip. */
+#define FS_ANNOT_ICONNAME_FILEATTACH_PAPERCLIP		"Paperclip"
+/** @brief	File attachment icon type: PushPin. */
+#define FS_ANNOT_ICONNAME_FILEATTACH_PUSHPIN			"PushPin"
+/** @brief	File attachment icon type: Tag. */
+#define FS_ANNOT_ICONNAME_FILEATTACH_TAG				"Tag"
+    
+#define FS_ANNOT_ICONNAME_SIGNATURE_FOXIEFILAG		"FoxitFlag"
 
 /**@}*/
 
@@ -124,12 +138,28 @@ enum FS_DIBFORMAT {
 	/** @brief	DIB format: 32bpp format, with bits order "Blue, Green, Red, not used". Blue is in the lowest order. */
 	e_dibRgb32 = 0x020,
 	/** @brief	DIB format: 32bpp format, with bits order "Blue, Green, Red, Alpha". Blue is in the lowest order. */
-	e_dibArgb = 0x220
+	e_dibArgb = 0x220,
+    /** @brief	DIB format: 8bpp alpha mask. */
+    e_dib8bppMask = 0x108,
 };
 
 /**
+ * @brief	Enumeration for bitmap interpolation flags.
+ *
+ * @details	Values of this enumeration can be used alone or in combination.
+ */
+enum FS_BITMAPINTERPOLATIONFLAG {
+    /** @brief  When set, do not do halftone for shrinking or rotating. */\
+    e_interpolationDownsample= 0x01,
+    /** @brief  When set, do interpolation for stretching or transforming. */\
+    e_interpolationQuadratic= 0x02,
+    /** @brief  When set, do bicubic interpolation for stretching or transforming. */\
+    e_interpolationBicubic= 0x04
+};
+    
+/**
  * @brief	Enumeration for error code.
- * 
+ *
  * @details	Values of this enumeration should be used alone.
  */
 enum FS_ERRORCODE {
@@ -146,7 +176,7 @@ enum FS_ERRORCODE {
 	 *			When meet this, user should call function {@link FSPDFDoc::load:} again, with correct password.
 	 */
 	e_errPassword = 3,
-	/** @brief	Handler error: PDF document is encrypted by some unsupported security handler. */
+	/** @brief	Handler is invalid. */
 	e_errHandler = 4,
 	/** @brief	Certificate error: PDF document is encrypted by digital certificate and current user does not have the correct certificate. */
 	e_errCertificate = 5,
@@ -434,7 +464,45 @@ enum FS_FLATTENOPTIONS {
     /** @brief  Flatten a PDF page without form controls.  */
     e_flattenOptionNoFormControl = 0x0002
 };
-   
+    
+/**
+ * @brief	Enumeration for page box type.
+ *
+ * @details	Values of this enumeration should be used alone.
+ */
+enum FS_PAGEBOX {
+    /**
+     * @brief	Media Box for page boundary.
+     *
+     * @details	The boundary of the physical medium on which page is to be displayed or printed.
+     */
+    e_pageMediaBox = 0,
+    /**
+     * @brief	Crop Box for page boundary.
+     *
+     * @details	The region to which the contents of page are to be clipped (cropped) while displaying or printing.
+     */
+    e_pageCropBox = 1,
+    /**
+     * @brief	Trim Box for page boundary.
+     *
+     * @details	The region to which the contents of page should be clipped while outputting in a production environment.
+     */
+    e_pageTrimBox = 2,
+    /**
+     * @brief	Art Box for page boundary.
+     *
+     * @details	The intended dimensions of a finished page after trimming.
+     */
+    e_pageArtBox = 3,
+    /**
+     * @brief	Bleed Box for page boundary.
+     *
+     * @details	The extent of page's meaningful content (including potential white space) as intended by page's creator.
+     */
+    e_pageBleedBox = 4
+};
+    
 /**
  * @brief	Enumeration for markup annotation's state model.
  *
@@ -522,6 +590,22 @@ enum FS_ANNOTPROPERTY {
       */
     e_annotPropertyFillColor		= 3
 };
+    
+/**
+ * @brief	Class for catching Objective-C Exceptions in a Swift project.
+ */
+@interface FSSwiftException : NSObject
+/**
+ * @brief	Execute a block and catch Objective-C Exceptions.
+ *
+ * @param[in]	 tryBlock   A block that contains methods which may throw Objective-C exceptions.
+ * @param[in]	 error    Exceptions to be thrown if there is any error during block.
+ *
+ * @return	<b>YES</b> means successfully, otherwise return <b>NO</b>.
+ */
++(BOOL)tryException: (void(^)())tryBlock error:(__autoreleasing NSError **)error;
+
+@end
     
 /**
  * @brief	Class to represent a callback object to notify the Foxit PDF SDK events.
@@ -842,14 +926,218 @@ BOOL swigCMemOwn;
 -(void)dealloc;
 
 @end
+
+/**
+ * @brief	Enumeration for encryption type.
+ *
+ * @details	Values of this enumeration should be used alone.
+ */
+enum FS_ENCRYPTTYPE {
+    /** @brief	Unknown encryption type. */
+    e_encryptUnknown   =  -1,
+    /** @brief	No encryption pattern. */
+    e_encryptNone	  =	 0,
+    /** @brief	Encryption type: password, which is the standard encryption. */
+    e_encryptPassword	=	1,
+    /** @brief	Encryption type: digital certificate encryption. */
+    e_encryptCertificate	=	2,
+    /** @brief	Encryption type: Foxit DRM encryption. */
+    e_encryptFoxitDRM	=	3,
+    /** @brief	Encryption type: customized encryption. */
+    e_encryptCustom	=	4,
+    /** @brief	Encryption type: Microsoft RMS encryption. */
+    e_encryptRMS	=	5
+};
     
+/**
+ * @brief	Class to represent the base class for other concrete security callback object.
+ *
+ * @note	This is just a base class. User should not inherit this class directly when implementing a security callback for any type of decryption and encryption.
+ *			User should inherit any derived callback class of this base class.
+ */
+@interface FSSecurityCallback : NSObject
+{
+    /** @brief SWIG proxy related property, it's deprecated to use it. */
+    void *swigCPtr;
+    /** @brief SWIG proxy related property, it's deprecated to use it. */
+    BOOL swigCMemOwn;
+}
+/** @brief SWIG proxy related function, it's deprecated to use it. */
+-(void*)getCptr;
+/** @brief SWIG proxy related function, it's deprecated to use it. */
+-(id)initWithCptr: (void*)cptr swigOwnCObject: (BOOL)ownCObject;
+/**
+ * @brief	Get the encryption type of current security handler.
+ *
+ * @return	The encryption type.
+ *			Please refer to {@link FS_ENCRYPTTYPE::e_encryptPassword FS_ENCRYPTTYPE::e_encryptXXX} values and this would be one these values.
+ */
+-(enum FS_ENCRYPTTYPE) getSecurityType;
+
+/** @brief Free the object. */
+-(void)dealloc;
+
+@end
+   
+/**
+ * @brief	Class to represent a callback object for certificate decryption.
+ *
+ * @note	User should inherit this callback class and implement the pure virtual functions (as callback functions).
+ *			User can register their own certificate security callback object to Foxit PDF SDK, by function [FSLibrary registerSecurityCallback] with <i>filter</i> "Adobe.PubSec".
+ *			Function [FSLibrary unregisterSecurityCallback] can be called to unregister the security callback object with the registered filter name.
+ */
+@interface FSCertificateSecurityCallback : FSSecurityCallback
+
+/**
+ * @brief	Get the encryption type of current security callback.
+ *
+ * @note	Caller should not override this function, otherwise there will be unexpected behavior.
+ *
+ * @return	The encryption type. It would always be {@link FS_ENCRYPTTYPE::e_encryptCertificate}.
+ */
+-(enum FS_ENCRYPTTYPE) getSecurityType;
+
+/**
+ * @brief	Get the PKCS12 format data buffer, usually it's a .pfx file.
+ *
+ * @envelope    The PKCS#7 object which is referred to as the enveloped data.
+ *
+ * @return  The PKCS12 format data buffer.
+ */
+-(NSData *)getPKCS12: (NSData*)envelope;
+
+/**
+ * @brief	Get the password for the PKCS12 format data.
+ *
+ * @return	The password string used to parse the PKCS12 object.
+ */
+-(NSString *)getPasswordForPKCS12: (NSData*)pkcs12;
+
+-(void)dealloc;
+@end
+    
+/**
+ * @brief   Enumeration for Encryption Algorithm.
+ *
+ * @details Values of this enumeration should be used alone.
+ */
+enum FS_CIPHERTYPE {
+    /** @brief  Not use encryption algorithm. */\
+    e_cipherNone = 0,
+    /** @brief  Use RC4 encryption algorithm, with the key length between 5-bytes and 16-bytes. */\
+    e_cipherRC4 = 1,
+    /** @brief  Use AES encryption algorithm, with the key length be 16-bytes or 32-bytes. */\
+    e_cipherAES = 2
+};
+  
+    
+/**
+ * @brief	Class to represent a security handler, used for encrypting PDF document.
+ *
+ * @details	Class ::FSSecurityHandler is the base class. It has following derived classes:
+ *			<ul>
+ *			<li> Class ::FSStdSecurityHandler is used for password encryption. </li>
+ *			<li> Class ::FSCertificateSecurityHandler is used for certificate encryption.</li>
+ *			</ul>
+ *			To set a security handler to a PDF document, please call function {@link FSPDFDoc::setSecurityHandler:}, then the security handler will take effect during next saving process.
+ *			To get the security handler used for a PDF document, please call function {@link FSPDFDoc::setSecurityHandler:}.
+ */
+@interface FSSecurityHandler : NSObject
+{
+    /** @brief SWIG proxy related property, it's deprecated to use it. */
+    void *swigCPtr;
+    /** @brief SWIG proxy related property, it's deprecated to use it. */
+    BOOL swigCMemOwn;
+}
+/** @brief SWIG proxy related function, it's deprecated to use it. */
+-(void*)getCptr;
+/** @brief SWIG proxy related function, it's deprecated to use it. */
+-(id)initWithCptr: (void*)cptr swigOwnCObject: (BOOL)ownCObject;
+/**
+ * @brief	Get the encryption type of current security handler.
+ *
+ * @return	The encryption type.
+ *			Please refer to {@link FS_ENCRYPTTYPE::e_encryptPassword FS_ENCRYPTTYPE::e_encryptXXX} values and this would be one these values.
+ */
+-(enum FS_ENCRYPTTYPE) getSecurityType;
+
+/** @brief Free the object. */
+-(void)dealloc;
+
+@end
+    
+/**
+ * @brief	Class to represent a security handler, used for encrypting PDF document.
+ *
+ * @details	Class ::FSSecurityHandler is the base class. It has following derived classes:
+ *			<ul>
+ *			<li> Class ::FSStdSecurityHandler is used for password encryption. </li>
+ *			<li> Class ::FSCertificateSecurityHandler is used for certificate encryption.</li>
+ *			</ul>
+ *			To set a security handler to a PDF document, please call function {@link FSPDFDoc::setSecurityHandler:}, then the security handler will take effect during next saving process.
+ *			To get the security handler used for a PDF document, please call function {@link FSPDFDoc::setSecurityHandler:}.
+ */
+@interface FSStdSecurityHandler : FSSecurityHandler
+
++ (FSStdSecurityHandler*)create;
+/**
+ * @brief Initialize the standard security handler.
+ *
+ * @param[in]	userPermissions		The user permissions, see {@link FS_USERPERMISSIONS::e_permPrint FS_USERPERMISSIONS::e_permXXX} values and this would be one or combination of its values.
+ * @param[in]	userPassword		The user password, which is used to open the PDF document.
+ * @param[in]	ownerPassword		The owner password, which is used to take ownership of the PDF document.
+ * @param[in]	cipher				See {FS_CIPHERTYPE::e_cipherXXX} values. e_cipherNone is not allowed.
+ * @param[in]	keyLen				The key length, in bytes.
+ *									For FSCommonDefines::e_cipherRC4 cipher, this value should be between 5 and 16. The prefered one should be 16.
+ *									For FSCommonDefines::e_cipherAES cipher, this value should be 16 or 32.
+ * @param[in]	encryptMetadata		Whether to encrypt metadata or not.
+ *
+ * @return True if initialize successfully, else false.
+ */
+-(BOOL)initialize:(unsigned int)userPermissions userPassword:(NSString*)userPassword ownerPassword:(NSString*)ownerPassword cipher:(enum FS_CIPHERTYPE)cipher keyLen:(int)keyLen encryptMetadata:(BOOL)encryptMetadata;
+
+@end
+    
+    
+/**
+ * @brief	Class to represent a certificate security handler, used for certificate encryption.
+ *
+ * @see	FSSecurityHandler
+ */
+@interface FSCertificateSecurityHandler : FSSecurityHandler
+
+/**
+ * @brief	Create a certificate security handler object.
+ *
+ * @return	A new certificate security handler object.
+ */
++(FSCertificateSecurityHandler*)create;
+
+/**
+ * @brief	Initialize current certificate security handler.
+ *
+ * @param[in]	x509Certificates	An array which each element specifies the binary buffer of x509 certificates.
+ * @param[in]	cipher				Cipher type.
+ *									Please refer to {FS_CIPHERTYPE::e_cipherXXX} values and this should be one of these values,
+ *									except {@link FS_CIPHERTYPE::e_cipherNone}.
+ * @param[in]	encryptMetadata		A boolean value that indicates whether to encrypt metadata or not.<br>
+ *									<b>YES</b> means to encrypt metadata, and <b>NO</b> means not to encrypt metadata.
+ *
+ * @return	<b>YES</b> means success, while <b>FASLE</b> means failure.
+ *
+ * @exception	e_errParam		Value of input parameter is invalid.
+ */
+-(BOOL)initialize: (NSArray<NSData*>*)x509Certificates cipher: (enum FS_CIPHERTYPE)cipher encryptMetadata: (BOOL)encryptMetadata;
+
+-(void)dealloc;
+
+@end
     
 /**
  * @brief	Class to represent the library management for global configuration.
  *
  * @details	It contains functions to initialize/re-initialize/release Foxit PDF SDK library, and also contains functions for global use.<br>
  *			Any application should load Foxit PDF SDK by function {@link FSLibrary::init:key:} before calling any other Foxit PDF SDK functions.
- *			When there is no need to use Foxit PDF SDK any more, call function {@link FSLibrary::release}.
  */
 @interface FSLibrary : NSObject
 {
@@ -956,6 +1244,33 @@ BOOL swigCMemOwn;
  * @return	<b>YES</b> means success, while <b>NO</b> means failure.
  */
 +(BOOL)registerDefaultSignatureHandler;
+
+/**
+ * @brief	Register a security handler to Foxit PDF SDK for decryption of the PDF files with special encryption filters.
+ *
+ * @param[in]	filter				The filter name of the security handler, in UTF-8 encoding. It should be valid and not empty.<br>
+ *									When users implement security callback of {@link ::FSCertificateSecurityCallback}, the filter value must be set to "Adobe.PubSec".<br>
+ * @param[in]	callback	A security callback, which is implemented by user and based on callback class {@link ::FSSecurityCallback}.
+ *									User should not inherit {@link ::FSSecurityCallback} directly, but inherit its derived class, such as {@link ::FSCertificateSecurityCallback}, etc.
+ *
+ * @return	<b>YES</b> means success, while <b>NO</b> means failure.
+ *
+ * @exception	e_errFormat		Any input UTF-8 string parameter is not in UTF-8 encoding.
+ */
++(BOOL)registerSecurityCallback:(NSString*)filter callback:(FSSecurityCallback*)callback;
+
+/**
+ * @brief	Unregister a security handler from Foxit PDF SDK.
+ *
+ * @param[in]	filter				The filter name of the security handler, in UTF-8 encoding. It should be valid and not empty.<br>
+ *									Usually, the filter name is just the one used to register a security callback in function {@link FSLibrary::registerSecurityCallback:callback:}.<br>
+ *									When users implement security callback of {@link ::FSCertificateSecurityCallback}, the filter value must be set to "Adobe.PubSec".<br>
+ *
+ * @return	<b>YES</b> means success, while <b>NO</b> means failure.
+ *
+ * @exception	e_errFormat		Any input UTF-8 string parameter is not in UTF-8 encoding.
+ */
++(BOOL)unregisterSecurityCallback:(NSString*)filter;
 
 /** @brief Free the object. */
 -(void)dealloc;
@@ -1722,7 +2037,7 @@ BOOL swigCMemOwn;
 /**
  * @brief	Add a point to the end of current PDF path, to start a new figure.
  *
- * @details	If this funtion succeeds, the new point will become the new "current point",
+ * @details	If this function succeeds, the new point will become the new "current point",
  *			and the new figure will become the new "current figure".
  *
  * @param[in]	point	New point, in PDF coordinate system.
@@ -1758,7 +2073,7 @@ BOOL swigCMemOwn;
  * @details	When closing current figure, the last point's type may be changed:
  *			<ul>
  *			<li>If the last point's type is {@link FS_PATHPOINTTYPE::e_pointTypeMoveTo}, that means the last figure just has one point and cannot be closed
- *				and current function will return <b>FALSE</b>.</li>
+ *				and current function will return <b>NO</b>.</li>
  *			<li>If the last point's type is {@link FS_PATHPOINTTYPE::e_pointTypeLineTo}, the type will be changed to {@link FS_PATHPOINTTYPE::e_pointTypeLineToCloseFigure}.</li>
  *			<li>If the last point's type is {@link FS_PATHPOINTTYPE::e_pointTypeLineTo}, the type will be changed to {@link FS_PATHPOINTTYPE::e_pointTypeBezierToCloseFigure}.</li>
  *			<li>If the last point's type is already {@link FS_PATHPOINTTYPE::e_pointTypeLineToCloseFigure} or {@link FS_PATHPOINTTYPE::e_pointTypeBezierToCloseFigure},
@@ -3031,7 +3346,7 @@ BOOL swigCMemOwn;
  *
  * @details	A pop-up annotation (PDF 1.3) displays text in a pop-up window for entry and editing.
  *			It typically does not appear alone but is associated with a markup annotation, its parent annotation, and is used for editing the parent's text. <br>
- *			It has no appearance stream or associated actions of its own, so function {@link FSAnnot::resetAppearanceStream} will always return <b>FALSE</b> for a pop-up annotation.
+ *			It has no appearance stream or associated actions of its own, so function {@link FSAnnot::resetAppearanceStream} will always return <b>NO</b> for a pop-up annotation.
  *			Class ::FSPopup is derived from class ::FSAnnot and also offers functions to access pop-up annotation's properties.
  *
  * @see	FSAnnot
@@ -3600,7 +3915,7 @@ BOOL swigCMemOwn;
  *								{@link FSM_ANNOTSTATE::e_annotStateCompleted}, or {@link FSM_ANNOTSTATE::e_annotStateNone}.
  *							</li>
  *							</ul>
- *							State model can be gotten by fucntion {@link FSNote::getStateModel}.
+ *							State model can be gotten by function {@link FSNote::getStateModel}.
  */
 -(void)setState: (enum FS_ANNOTSTATE)state;
 
@@ -4030,7 +4345,7 @@ BOOL swigCMemOwn;
  *
  * @param[in]	quadPoints		A valid array of quadrilaterals. It should not be <b>nil</b>.
  */
--(void)setQuadPoints : (NSArray*)quadPoints;
+-(void)setQuadPoints : (NSArray<FSQuadPoints*>*)quadPoints;
 /**
  * @brief	Get highlighting mode.
  *
@@ -5188,7 +5503,14 @@ BOOL swigCMemOwn;
 /**
  * @brief	Set the title.
  *
- * @param[in]	title	New title string. It should be UTF-8 encoding.
+ * @param[in]	title	New title string. It should be in UTF-8 encoding.
+ *
+ * @return	None.
+ *
+ * @exception	e_errParam			Value of input parameter is invalid.
+ * @exception	e_errFormat			Any input UTF-8 string parameter is not in UTF-8 encoding.
+ * @exception	e_errOutOfMemory	Out-of-memory error occurs.
+ * @exception	e_errUnknown		Any unknown error occurs.
  */
 -(void)setTitle:(NSString*)title;
 
@@ -5204,8 +5526,11 @@ BOOL swigCMemOwn;
  * @brief	Set the index of the destination page.
  *
  * @param[in]	index	The new destination page index.
+ *
+ * @return	None.
  */
 -(void)setPageIndex:(int)index;
+
 /**
  * @brief	Get date and time.
  *
@@ -5220,8 +5545,10 @@ BOOL swigCMemOwn;
 /**
  * @brief	Set date and time.
  *
- * @param[in]	dateTime	New date and time. Its value should be valid.
+ * @param[in]	dateTime		New date and time. Its value should be valid.
  * @param[in]	isCreationDate	<b>YES</b> means to set creation date time, and <b>NO</b> means to set modified date time.
+ *
+ * return None.
  */
 -(void)setDateTime:(FSDateTime*)dateTime isCreationDate:(BOOL)isCreationDate;
 
@@ -5269,28 +5596,6 @@ enum FS_PASSWORDTYPE {
 	/** @brief	An owner password is used in PDF document. */
 	e_pwdOwner	=	3
 };
-
-
-/**
- * @brief	Enumeration for encryption type.
- *
- * @details	Values of this enumeration should be used alone.
- */
-enum FS_ENCRYPTTYPE {
-	/** @brief	No encryption pattern. */
-	e_encryptNone	 =	0,
-	/** @brief	Encryption type: password, which is the standard encryption. */
-	e_encryptPassword	=	1,
-	/** @brief	Encryption type: digital certificate encryption. */
-	e_encryptCertificate	=	2,
-	/** @brief	Encryption type: Foxit DRM encryption. */
-	e_encryptFoxitDRM	=	3,
-	/** @brief	Encryption type: customized encryption. */
-	e_encryptCustom	=	4,
-	/** @brief	Encryption type: Microsoft RMS encryption. */
-	e_encryptRMS	=	5
-};
-	
 	
 /**
  * @brief	Enumeration for user permissions of a PDF document.
@@ -5498,7 +5803,25 @@ enum FS_SAVEFLAGS {
 	 */
 	e_saveFlagObjectStream = 0x0004
 };
-	
+
+/**
+ * @brief	Enumeration for flags for importing pages.
+ *
+ * @details	Values of this enumeration can be used alone or in combination.
+ */
+enum FS_IMPORTFLAGS {
+    /** @brief	Import pages normally.*/
+    e_importFlagNormal = 0,
+    /** @brief	Import pages with layers.*/
+    e_importFlagWithLayers = 0x0001,
+    /**
+     * @brief	Import pages without cloning stream objects into memory.
+     *
+     * @details	This flags is only useful when the source PDF document has not been encrypted.
+     *			If this flag is used for importing pages, it will reduce memory overhead.
+     */
+    e_importFlagShareStream = 0x0002
+};
 
 /**
  * @brief	Class to access a PDF document.
@@ -5556,6 +5879,13 @@ BOOL swigCMemOwn;
 /** @brief SWIG proxy related function, it's deprecated to use it. */
 -(id)initWithCptr: (void*)cptr swigOwnCObject: (BOOL)ownCObject;
 /**
+ * @brief	Create an empty new document.
+ *
+ * @return	A new ::FSPDFDoc object.
+ */
++(FSPDFDoc*)create;
+
+/**
  * @brief	Create a PDF document object with an existing PDF document from file path.
  *
  * @param[in]	path	Path name of the PDF file.
@@ -5596,6 +5926,17 @@ BOOL swigCMemOwn;
  *			For other error code value, please refer to {@link FS_ERRORCODE::e_errSuccess FS_ERRORCODE::e_errXXX} for more details.
  */
 -(enum FS_ERRORCODE)load: (NSString *)password;
+
+/**
+ * @brief	Check whether current PDF document is a XFA document.
+ *
+ * @details	Currently, Foxit PDF SDK does not fully support XFA document. When loading a XFA document, Foxit PDF SDK may only load the XFA wrapper level, and cannot access to the real XFA content.
+ *			Foxit PDF SDK does not support to insert/import/remove/move pages in a XFA document yet.
+ *
+ * @return	<b>YES</b> means current document is a XFA document, while <b>NO</b> means current document is not a XFA document.
+ */
+-(BOOL)isXFA;
+
 /**
  * @brief	Check whether current document is an encrypted file or not.
  *
@@ -5605,7 +5946,7 @@ BOOL swigCMemOwn;
 /**
  * @brief	Check whether current document has been modified or not.
  *
- * @details	Once function {@link FSPDFDoc::saveAs:saveFlags:} is called successfully, the modified status of current document will be <b>FALSE</b> until the document is be modified again.
+ * @details	Once function {@link FSPDFDoc::saveAs:saveFlags:} is called successfully, the modified status of current document will be <b>NO</b> until the document is be modified again.
  *
  * @return	<b>YES</b> means current document has been modified, while <b>NO</b> means current document has not been modified.
  */
@@ -5904,12 +6245,360 @@ BOOL swigCMemOwn;
  */
 -(FSSignature*)getSignature: (int)index;
 
+/**
+ * @brief	Insert a new blank PDF page to document, by index.
+ *
+ * @details	The new PDF page will have a default size: width is 612 and height is 792.
+ *			User can call function {@link FSPDFPage::setSize:height:} to change the size of new PDF page.
+ *
+ * @param[in]	index	The page index for new page.<br>
+ *						If parameter <i>index</i> is less than 0, the new page will be inserted to the first. <br>
+ *						If parameter <i>index</i> is equal to or larger than current page count,
+ *						the new page will be inserted to the end.
+ *
+ * @return	A new PDF page object, which represents a blank page.
+ *			If there is any error, this function will return <b>nil</b>.
+ */
+-(FSPDFPage*)insertPage: (int)index;
+
+/**
+ * @brief	Remove specified PDF page.
+ *
+ * @details	Once the specified PDF page is removed successfully, the page object cannot be used any more.
+ *
+ * @param[in]	page	A ::FSPDFPage object that represents the PDF page to be removed. It should be in current PDF document.
+ *
+ * @return	<b>YES</b> means success, while <b>NO</b> means failure.
+ */
+-(BOOL)removePage: (FSPDFPage*)page;
+
+/**
+ * @brief	Move specified page to a new index position.
+ *
+ * @details	If the specified page is successfully moved to the new index position, page index of all the pages between the new index and old index of the specified page will be changed as well.
+ *
+ * @param[in]	page		A ::FSPDFPage object that represents the PDF page to be moved. It should be in current PDF document.
+ * @param[in]	dstIndex	Index of the destination position in page array. Valid range: from 0 to (<i>count</i>-1).
+ *							<i>count</i> is returned by function {@link FSPDFDoc::getPageCount}.<br>
+ *							If parameter <i>dstIndex</i> is just the same as the page index of parameter <i>page</i>,
+ *							no change will be done and this function will return <b>YES</b> directly.
+ *
+ * @return	<b>YES</b> means success or no need to move current page, while <b>NO</b> means failure.
+ */
+-(BOOL)movePageTo: (FSPDFPage*)page dstIndex: (int)dstIndex;
+
+/**
+ * @brief	Start to import pages from another PDF document (via file path).
+ *
+ * @details	Currently not support to import pages from a PDF which contains XFA form.
+ *
+ * @param[in]	dstIndex		A page index in current PDF document. This is used to specify where the imported pages will be inserted.
+ *								If parameter <i>dstIndex</i> is less than 0, the imported pages will be inserted to the first. <br>
+ *								If parameter <i>dstIndex</i> is equal to or larger than current page count, the imported pages will be inserted to the end.
+ * @param[in]	flags			Options for importing pages.
+ *								Please refer to {@link FS_IMPORTFLAGS::e_importFlagNormal FS_IMPORTFLAGS::e_importFlagXXX} and this can be one or a combination of them.
+ * @param[in]	layerName		The name of non-selectable label or the prefix name of the non-selectable label to be shown in layer panel of application, in UTF-8 encoding.
+ *								If parameter <i>flags</i> contains {@link FS_IMPORTFLAGS::e_importFlagWithLayers}, this should not be empty and should be a valid string.
+ *								If parameter <i>flags</i> does not contain {@link FS_IMPORTFLAGS::e_importFlagWithLayers}, this string will be ignored.
+ *								<ul>
+ *								<li>If all the pages of source PDF document is to be imported to current document, all layers from source document will be grouped under a non-selectable label,
+ *									and this string will be directly used as the label. </li>
+ *								<li>If only part of pages of source PDF document is to be imported to current document, layers in the same page will be grouped under a single non-selectable label,
+ *									and this string will be used as the prefix name of the label. The label will be like "layerName_Page_X". </li>
+ *								</ul>
+ * @param[in]	srcFilePath		The file path of source PDF document, from which some pages will be imported to current PDF document.
+ * @param[in]	password		The password string for source PDF document. It should be in UTF-8 encoding. If source PDF document is not encrypted by password, just pass an empty string.
+ * @param[in]	pageRanges		An integer array which contains the page ranges of source PDF document, to be imported.<br>
+ *								In this array, 2 numbers are a pair: the first integer is the starting page index, and the second integer is the page count.<br>
+ *								If this parameter is set to <b>nil</b>, all pages in the source document will be imported.
+ *								If this parameter is not <b>nil</b>, it should contains at least 2 numbers, and the count of elements should be a multiples of 2.
+ * @param[in]	count			The count of elements in parameter <i>pageRanges</i>.
+ *								If parameter <i>pageRanges</i> is not <b>nil</b>, this value should be above 0 and be a multiples of 2.
+ *								If parameter <i>pageRanges</i> is <b>nil</b>, this value will be ignored.
+ * @param[in]	pause			Pause object which decides if the importing process needs to be paused.
+ *								This can be <b>nil</b> which means not to pause during the parsing process.
+ *								If this is not <b>nil</b>, it should be a valid pause object implemented by user.
+ *
+ * @return	{@link FS_PROGRESSSTATE::e_progressFinished} means the importing process is finished successfully.<br>
+ *			{@link FS_PROGRESSSTATE::e_progressToBeContinued} means the importing process is not finished yet and function FSPDFDoc::continueImportPages() should be called to continue the process.
+ *			{@link FS_PROGRESSSTATE::e_progressError} means any error occurs.
+ */
+-(enum FS_PROGRESSSTATE)startImportPagesFromFilePath: (int)dstIndex flags: (unsigned int)flags layerName: (NSString *)layerName srcFilePath: (NSString *)srcFilePath password: (NSString *)password pageRanges: (int *)pageRanges count: (int)count pause: (FSPauseCallback*)pause;
+
+/**
+ * @brief	Start to import pages from another PDF document (via file document).
+ *
+ * @details	Currently not support to import pages from a PDF which contains XFA form.
+ *
+ * @param[in]	dstIndex		A page index in current PDF document. This is used to specify where the imported pages will be inserted.
+ *								If parameter <i>dstIndex</i> is less than 0, the imported pages will be inserted to the first. <br>
+ *								If parameter <i>dstIndex</i> is equal to or larger than current page count, the imported pages will be inserted to the end.
+ * @param[in]	flags			Options for importing pages.
+ *								Please refer to {@link FS_IMPORTFLAGS::e_importFlagNormal FS_IMPORTFLAGS::e_importFlagXXX} and this can be one or a combination of them.
+ * @param[in]	layerName		The name of non-selectable label or the prefix name of the non-selectable label to be shown in layer panel of application, in UTF-8 encoding.
+ *								If parameter <i>flags</i> contains {@link FS_IMPORTFLAGS::e_importFlagWithLayers}, this should not be empty and should be a valid string.
+ *								If parameter <i>flags</i> does not contain {@link FS_IMPORTFLAGS::e_importFlagWithLayers}, this string will be ignored.
+ *								<ul>
+ *								<li>If all the pages of source PDF document is to be imported to current document, all layers from source document will be grouped under a non-selectable label,
+ *									and this string will be directly used as the label. </li>
+ *								<li>If only part of pages of source PDF document is to be imported to current document, layers in the same page will be grouped under a single non-selectable label,
+ *									and this string will be used as the prefix name of the label. The label will be like "layerName_Page_X". </li>
+ *								</ul>
+ * @param[in]	srcDoc			A ::FSPDFDoc object that represents the source PDF document, whose pages will be imported to current PDF document.
+ *								Please keep this source document valid until current document will not be saved any more.
+ * @param[in]	pageRanges		An integer array which contains the page ranges of source PDF document, to be imported.<br>
+ *								In this array, 2 numbers are a pair: the first integer is the starting page index, and the second integer is the page count.<br>
+ *								If this parameter is set to <b>nil</b>, all pages in the source document will be imported.
+ *								If this parameter is not <b>nil</b>, it should contains at least 2 numbers, and the count of elements should be a multiples of 2.
+ * @param[in]	count			The count of elements in parameter <i>pageRanges</i>.
+ *								If parameter <i>pageRanges</i> is not <b>nil</b>, this value should be above 0 and be an even number.
+ *								If parameter <i>pageRanges</i> is <b>nil</b>, this value will be ignored.
+ * @param[in]	pause			Pause object which decides if the importing process needs to be paused.
+ *								This can be <b>nil</b> which means not to pause during the parsing process.
+ *								If this is not <b>nil</b>, it should be a valid pause object implemented by user.
+ *
+ * @return	{@link FS_PROGRESSSTATE::e_progressFinished} means the importing process is finished successfully.<br>
+ *			{@link FS_PROGRESSSTATE::e_progressToBeContinued} means the importing process is not finished yet and function FSPDFDoc::continueImportPages() should be called to continue the process.
+ *			{@link FS_PROGRESSSTATE::e_progressError} means any error occurs.
+ */
+-(enum FS_PROGRESSSTATE)startImportPages: (int)dstIndex flags: (unsigned int)flags layerName: (NSString *)layerName srcDoc: (FSPDFDoc *)srcDoc pageRanges: (int *)pageRanges count: (int)count pause: (FSPauseCallback*)pause;
+
+/**
+ * @brief	Continue to import pages if the importing process has not been finished yet.
+ *
+ * @return	{@link FS_PROGRESSSTATE::e_progressFinished} means the importing process is finished successfully.<br>
+ *			{@link FS_PROGRESSSTATE::e_progressToBeContinued} means the importing process is not finished yet and function FSPDFDoc::continueImportPages() should be called to continue the process.
+ *			{@link FS_PROGRESSSTATE::e_progressError} means any error occurs.
+ */
+-(enum FS_PROGRESSSTATE)continueImportPages;
+/**
+ * @brief	Set a specified PDF security handler for encryption, such as standard encryption(password), certificate encryption...
+ *
+ * @param[in]	securityHandler		A PDF security handler object.
+ *
+ * @return	<b>YES</b> means success, while <b>NO</b> means failure.
+ *
+ * @exception	e_errParam		Value of input parameter is invalid.
+ */
+-(BOOL)setSecurityHandler:(FSSecurityHandler*)securityHandler;
+/**
+ * @brief	Get the current PDF security handler of current document.
+ *
+ * @return	The PDF security handler object.
+ */
+-(FSSecurityHandler*)getSecurityHandler;
+/**
+ * @brief	Remove the security handler from current document, so that the later saved document will be unencrypted.
+ *
+ * @return	<b>YES</b> means success, while <b>NO</b> means failure.
+ */
+-(BOOL)removeSecurity;
+
 /** @brief Free the object. */
 -(void)dealloc;
 
 @end
+    
+    
+/*******************************************************************************/
+/* FDF document                                                                */
+/*******************************************************************************/
 
+/**
+ * @brief	Enumeration for FDF document type.
+ *
+ * @details	Values of this enumeration should be used alone.
+ */
+enum FS_FDFDOCTYPE {
+    /** @brief	FDF document type: FDF. */
+    e_fdfDocTypeFDF = 0,
+    /** @brief	FDF document type: XFDF. */
+    e_fdfDocTypeXFDF = 1
+};
+    
+/**
+ * @brief	Class to access a FDF/XFDF document.
+ *
+ * @details	FDF (Forms Data Format) is a kind of file format, used for interactive form data.
+ *			FDF can be used when submitting form data to a server, receiving the response, and incorporating it into the interactive form.
+ *			It can also be used to export form data to stand-alone files that can be stored, transmitted electronically,
+ *			and imported back into the corresponding PDF interactive form. Besides these, FDF can be used to define a container for annotations
+ *			that are separate from the PDF document to which they apply.<br>
+ *			XFDF(XML Forms Data Format) is a version of FDF based on XML. It has similar features with FDF.<br>
+ *			In short terms, FDF and XFDF contain the subset of a PDF document to describe interactive forms and annotations.<br>
+ *			Class {@link ::FSFDFDoc} can be used to represent either FDF or XFDF. A {@link ::FSFDFDoc} object can be created in following ways:
+ *			<ul>
+ *			<li>To create a new FDF/XFDF document, please call function {@link FSFDFDoc::create:}.</li>
+ *			<li>To load an existing FDF/XFDF document, please call functions {@link FSFDFDoc::loadFromFilePath:}, {@link FSFDFDoc::loadFromMemory:},
+ *			or {@link FSFDFDoc::loadFromHandler:}.</li>
+ *			</ul>
+ *			This class also offer functions to:
+ *			<ul>
+ *			<li>import single annotation or all annotations from a PDF document, or export annotations to a PDF document,
+ *				by functions {@link FSFDFDoc::importAnnotFromPDFDoc:}, {@link FSFDFDoc::importAllAnnotsFromPDFDoc:}, {@link FSFDFDoc::exportAllAnnotsToPDFDoc:}.</li>
+ *			<li>get or set related PDF fiel path, by functions {@link FSFDFDoc::getPDFPath} and {@link FSFDFDoc::setPDFPath:}.</li>
+ *			<li>save current FDF/XFDF as another one, by function {@link FSFDFDoc::saveAs:}.</li>
+ *			</ul>
+ *			To import or export form fields, please use functions {@link FSForm::importFromFDFDoc:} and {@link FSForm::exportToFDFDoc:}.
+ *
+ * @see	FSAnnot
+ * @see	FSForm
+ */
+@interface FSFDFDoc : NSObject
+{
+    void *swigCPtr;
+    BOOL swigCMemOwn;
+}
+-(void*)getCptr;
 
+-(id)initWithCptr: (void*)cptr swigOwnCObject: (BOOL)ownCObject;
+
+/**
+ * @brief	Create an empty new FDF/XFDF document.
+ *
+ * @param[in]	fdfDocType	The FDF document type. It should be one of following values: <br>
+ *							{@link FS_FDFDOCTYPE::e_fdfDocTypeFDF}, {@link FS_FDFDOCTYPE::e_fdfDocTypeXFDF}
+ *
+ * @return	A new ::FSFDFDoc object.
+ *
+ * @exception	e_errParam		Value of input parameter is invalid.
+ * @exception	e_errOutOfMemory	Out-of-memory error occurs.
+ */
++(FSFDFDoc*)create: (enum FS_FDFDOCTYPE)fdfDocType;
+
+/**
+ * @brief	Load a FDF/XFDF document object from an existing FDF/XFDF file path.
+ *
+ * @param[in]	path	A full path of an existing FDF/XFDF file, including file name and extension. It should be in UTF-8 encoding.
+ *						It should be a FDF or XFDF file.
+ *
+ * @return	A new ::FSFDFDoc object.
+ *
+ * @exception	e_errParam			Value of input parameter is invalid.
+ * @exception	e_errFormat			Any input UTF-8 string parameter is not in UTF-8 encoding, or input path is no a FDF or XFDF file.
+ * @exception	e_errFile			The file specified by input path cannot be found or opened.
+ * @exception	e_errOutOfMemory	Out-of-memory error occurs.
+ */
++(FSFDFDoc*)loadFromFilePath: (NSString *)path;
+
+/**
+ * @brief	Load a FDF/XFDF document object from a memory buffer, which contains full data of a FDF/XFDF document.
+ *
+ * @param[in]	buffer			A memory buffer. The FDF/XFDF document data should be fully loaded in this memory buffer.
+ *
+ * @return	A new ::FSFDFDoc object.
+ *
+ * @exception	e_errParam			Value of input parameter is invalid.
+ * @exception	e_errFormat			Data in input memory does not represent a FDF or XFDF file.
+ * @exception	e_errOutOfMemory	Out-of-memory error occurs.
+ */
++(FSFDFDoc*)loadFromMemory: (NSData *)buffer;
+
+/**
+ * @brief	Load a FDF/XFDF document object with a file read handler.
+ *
+ * @param[in]	fileRead	Pointer to a ::FSFileReadCallback object which is implemented by user to load a FDF/XFDF document.
+ *							It should not be <b>nil</b>.
+ *
+ * @return	A new ::FSFDFDoc object.
+ *
+ * @exception	e_errParam			Value of input parameter is invalid.
+ * @exception	e_errFormat			Input ::FSFileReadCallback does not access to a FDF or XFDF file.
+ * @exception	e_errOutOfMemory	Out-of-memory error occurs.
+ */
++(FSFDFDoc*)loadFromHandler: (FSFileReadCallback *)fileRead;
+
+/**
+ * @brief	Get the path of related PDF document
+ *
+ * @details	The path can be either an absolute one, or a relative one.
+ *
+ * @return	Path of related PDF, in UTF-8 encoding.
+ *
+ * @exception	e_errUnknown	Any unknown error occurs.
+ */
+-(NSString *)getPDFPath;
+
+/**
+ * @brief	Set the path of related PDF document.
+ *
+ * @details	The path can be either an absolute one, or a relative one.<br>
+ *
+ * @param[in]	pdfPath		The path of related PDF document. It should be in UTF-8 encoding.
+ *
+ * @return	<b>YES</b> means success, while <b>NO</b> means failure.
+ *
+ * @exception	e_errParam			Value of input parameter is invalid.
+ * @exception	e_errFormat			Any input UTF-8 string parameter is not in UTF-8 encoding, or input path is not a PDF file.
+ * @exception	e_errOutOfMemory	Out-of-memory error occurs.
+ * @exception	e_errUnknown		Any unknown error occurs.
+ */
+-(BOOL)setPDFPath: (NSString *)pdfPath;
+
+/**
+ * @brief	Save current FDF/XFDF document as another FDF/XFDF file.
+ *
+ * @param[in]	filePath	A full path of the new saved FDF/XFDF file, including file name and extension. It should be in UTF-8 encoding.
+ *							The file extension should match the type of current {@link ::FSFDFDoc} object.
+ *
+ * @return	<b>YES</b> means success, while <b>NO</b> means failure.
+ *
+ * @exception	e_errParam			Value of input parameter is invalid.
+ * @exception	e_errFormat			Any input UTF-8 string parameter is not in UTF-8 encoding, or input path is not a FDF or XFDF file.
+ * @exception	e_errUnknown		Any unknown error occurs.
+ */
+-(BOOL)saveAs: (NSString *)filePath;
+
+/**
+ * @brief	Import an annotation from a PDF document into current FDF/XFDF document.
+ *
+ * @details	Only markup annotations can be imported to a FDF/XFDF document.
+ *			Specially, markup annotations' related pop-up annotations will be imported as well, since they are just as a part of markup annotations.
+ *
+ * @param[in]	annot	 A ::FSAnnot object which is to be imported. It should be a markup annotation.
+ *
+ * @return	<b>YES</b> means success, while <b>NO</b> means failure.
+ *
+ * @exception	e_errParam			Value of input parameter is invalid.
+ * @exception	e_errOutOfMemory	Out-of-memory error occurs.
+ * @exception	e_errUnknown		Any unknown error occurs.
+ */
+-(BOOL)importAnnotFromPDFDoc: (FSAnnot*)annot;
+
+/**
+ * @brief	Import all annotations from a PDF document into current FDF/XFDF document.
+ *
+ * @details	Only markup annotations can be imported to a FDF/XFDF document.
+ *			Specially, markup annotations' related pop-up annotations will be imported as well, since they are just as a part of markup annotations.
+ *
+ * @param[in]	pdfDoc	A ::FSPDFDoc object, whose annotations will all be imported to curernt FDF/XFDF document.
+ *
+ * @return	<b>YES</b> means success, while <b>NO</b> means failure.
+ *
+ * @exception	e_errParam			Value of input parameter is invalid.
+ * @exception	e_errOutOfMemory	Out-of-memory error occurs.
+ * @exception	e_errUnknown		Any unknown error occurs.
+ */
+-(BOOL)importAllAnnotsFromPDFDoc: (FSPDFDoc*)pdfDoc;
+
+/**
+ * @brief	Export all annotations from current FDF/XFDF document into a PDF document.
+ *
+ * @param[in]	pdfDoc	A ::FSPDFDoc object, to which all annotations in current FDF/XFDF document will be exported.
+ *
+ * @return	<b>YES</b> means success, while <b>NO</b> means failure.
+ *
+ * @exception	e_errParam			Value of input parameter is invalid.
+ * @exception	e_errOutOfMemory	Out-of-memory error occurs.
+ * @exception	e_errUnknown		Any unknown error occurs.
+ */
+-(BOOL)exportAllAnnotsToPDFDoc: (FSPDFDoc*)pdfDoc;
+
+/** @brief Free the object. */
+-(void)dealloc;
+
+@end
+    
 /**
  * @brief	Enumeration for PDF object type.
  * 
@@ -6101,8 +6790,6 @@ BOOL swigCMemOwn;
 -(FSRectF*)getRect;
 /**
  * @brief	Get the direct object of current PDF object.
- *
- * @details	Only used when current object type is {@link FS_PDFOBJECTTYPE::e_objReference}.
  *
  * @return	A PDF object that represents the direct PDF object.
  *			If there is any error, <b>nil</b> will be returned.
@@ -6384,7 +7071,6 @@ BOOL swigCMemOwn;
 @end
 	
 	
-
 /** 
  * @brief	Enumeration for Page parse status.
  * 
@@ -6410,6 +7096,1384 @@ enum FS_CALCMARGINMODE {
 	/** @brief	Calculate margin by detecting paths or images. */
 	e_calcDetection = 1
 };
+    
+/**
+ * @brief   Enumeration for PDF graphics object type.
+ *
+ * @details Values of this enumeration should be used alone.
+ */
+enum FS_GRAPHICSOBJECTTYPE {
+    /** @brief	Represents all graphics object types, only used as filter. */
+    e_graphicsObjTypeAll = 0,
+    /** @brief  Text graphics object. */
+    e_graphicsObjTypeText = 1,
+    /** @brief  Path graphics object. */
+    e_graphicsObjTypePath = 2,
+    /** @brief  Image graphics object. */
+    e_graphicsObjTypeImage = 3,
+    /** @brief  Shading graphics object. */
+    e_graphicsObjTypeShading = 4,
+    /** @brief  Form XObject graphics object. */
+    e_graphicsObjTypeFormXObject = 5
+};
+
+/**
+ * @brief   Enumeration for filling mode types.
+ *
+ * @details Values of this enumeration should be used alone.
+ */
+enum FS_FILLMODE {
+    /** @brief  Fill mode: none. */
+    e_fillModeNone = 0,
+    /**
+     * @brief   Alternate fill mode.
+     *
+     * @details Represent a fill mode in which the system fills this area between odd-numbered and even-numbered polygon
+     *          sides on each scan line.
+     */
+    e_fillModeAlternate = 1,
+    /**
+     * @brief   Winding fill mode.
+     *
+     * @details Represent a fill mode in which the system uses a direction in which a figure is drawn to determine
+     *          whether to fill an area.
+     */
+    e_fillModeWinding = 2
+};
+
+/**
+ * @brief   Enumeration for render blend mode.
+ *
+ * @details Values of this enumeration should be used alone.
+ */
+enum FS_RENDERBLENDMODE {
+    /**
+     * @brief   Selecting source color and ignoring backdrop color.
+     *
+     * @details Here is the formula :<br>
+     *          B(Cb, Cs) = Cs.<br>
+     */
+    e_renderBlendNormal = 0,
+    /**
+     * @brief   Multiply backdrop by source color values.
+     *
+     * @details Here is the formula :<br>
+     *          B(Cb, Cs) = Cb * Cs.
+     */
+    e_renderBlendMultiply = 1,
+    /**
+     * @brief   Multiply complements of backdrop by source color values, and then complement the result.
+     *
+     * @details Here is the formula :<br>
+     *          B(Cb, Cs) = 1 - [(1 - Cb) * (1 - Cs)] = Cb + Cs - Cb * Cs.
+     */
+    e_renderBlendScreen = 2,
+    /**
+     * @brief   Multiply or screens colors, depending on backdrop color value.
+     *
+     * @details Here is the formula :<br>
+     *          B(Cb, Cs) = HardLight(Cs, Cb).
+     */
+    e_renderBlendOverlay = 3,
+    /**
+     * @brief   Select darker one of backdrop and source colors.
+     *
+     * @details Here is the formula :<br>
+     *          B(Cb, Cs) = min(Cb, Cs).
+     */
+    e_renderBlendDarken = 4,
+    /**
+     * @brief   Select lighter one of backdrop and source colors.
+     *
+     * @details Here is the formula :<br>
+     *          B(Cb, Cs) = max(Cb, Cs).
+     */
+    e_renderBlendLighten = 5,
+    /**
+     * @brief   Brightens backdrop color to reflect source colors.
+     *
+     * @details Painting with black produces no changes.<br>
+     *          Here is the formula :<br>
+     *          B(Cb, Cs) = <br>
+     *          - min(1, Cb / (1 - Cs))     if Cs < 1 <br>
+     *          - 1                         if Cs = 1
+     */
+    e_renderBlendColorDodge = 6,
+    /**
+     * @brief   Darkens backdrop color to reflect the source color.
+     *
+     * @details Painting with white produces no changes.<br>
+     *          Here is the formula :<br>
+     *          B(Cb, Cs) =  <br>
+     *          - 1 - min(1, (1 - Cb) / Cs) if Cs > 0 <br>
+     *          - 0                         if Cs = 0
+     */
+    e_renderBlendColorBurn = 7,
+    /**
+     * @brief   Multiply or screens colors, depending on source color value.
+     *
+     * @details Here is the formula :<br>
+     *          B(Cb, Cs) =  <br>
+     *          - Multiply(Cb, 2 * Cs)      if Cs <= 0.5 <br>
+     *          - Screen(Cb, 2 * Cs - 1)    if Cs > 0.5
+     */
+    e_renderBlendHardlight = 8,
+    /**
+     * @brief   Darkens or lightens colors, depending on source color value.
+     *
+     * @details Here is the formula :<br>
+     *          B(Cb, Cs) =  <br>
+     *          - Cb - (1 - 2 * Cs) * Cb * (1 - Cb)     if Cs <= 0.5 <br>
+     *          - Cb + (2 * Cs - 1) * (D(Cb) - Cb)      if Cs > 0.5 <br>
+     *          where D(x) = <br>
+     *          - ((16 * x - 12) * x + 4) * x           if x <= 0.25 <br>
+     *          - sqrt(x)                               if x > 0.25
+     */
+    e_renderBlendSoftlight = 9,
+    /**
+     * @brief   Subtracts the darker of the two constituent colors from lighter colors.
+     *
+     * @details Here is the formula :<br>
+     *          B(Cb, Cs) = |Cb - Cs|.
+     */
+    e_renderBlendDifference = 10,
+    /**
+     * @brief   Creates a color with the hue of the source color, and the saturation and luminosity of the backdrop color.
+     *
+     * @details Here is the formula :<br>
+     *          B(Cb, Cs) = SetLum(SetSat(Cs, Sat(Cb)), Lum(Cb)).
+     */
+    e_renderBlendExclusion = 11,
+    /**
+     * @brief   Creates a color with the hue of the source color, and the saturation and luminosity of the backdrop color.
+     *
+     * @details Here is the formula :<br>
+     *          B(Cb, Cs) = SetLum(SetSat(Cs, Sat(Cb)), Lum(Cb)).
+     */
+    e_renderBlendHue = 21,
+    /**
+     * @brief   Creates a color with the saturation of the source color, and the hue and luminosity of the backdrop color.
+     *
+     * @details Here is the formula :<br>
+     *          B(Cb, Cs) = SetLum(SetSat(Cb, Sat(Cs)), Lum(Cb)).
+     */
+    e_renderBlendSaturation = 22,
+    /**
+     * @brief   Creates a color with the hue and saturation of the source color, and the luminosity of the backdrop color.
+     *
+     * @details Here is the formula :<br>
+     *          B(Cb, Cs) = SetLum(Cs, Lum(Cb)).
+     */
+    e_renderBlendColor = 23,
+    /**
+     * @brief   Creates a color with the luminosity of the source color, and the hue and saturation of the backdrop color.
+     *
+     * @details Here is the formula :<br>
+     *          B(Cb, Cs) = SetLum(Cb, Lum(Cs)).
+     */
+    e_renderBlendLuminosity = 24
+};
+
+/**
+ * @brief   Enumeration for line join style.
+ *
+ * @details Values of this enumeration should be used alone.
+ *          The line join style specifies the shape to be used at the corners of paths that are stroked.
+ */
+enum FS_LINEJOINTYPE {
+    /**
+     * @brief   Miter line join type.
+     *
+     * @details The outer edges of the strokes for the two segments are extended until they meet at an angle.
+     */
+    e_lineJoinMiter = 0,
+    /**
+     * @brief   Round line join type.
+     *
+     * @details An arc of a circle with a diameter equal to the line width is drawn around the point where the two segments meet,
+     *          connecting the outer edges of the strokes for the two segments.
+     */
+    e_lineJoinRound = 1,
+    /**
+     * @brief   Bevel line join type.
+     *
+     * @details The two segments are finished with butt caps and the resulting notch beyond the end of the segments is filled with a triangle.
+     */
+    e_lineJoinBevel = 2
+};
+
+/**
+ * @brief   Enumeration for line cap style.
+ *
+ * @details Values of this enumeration should be used alone.
+ *          The line cap style specifies the shape to be used at the ends of open sub-paths (and dashes, if any)
+ *           when they are stroked.
+ */
+enum FS_LINECAPTYPE {
+    /**
+     * @brief   The Butt Line Cap Type.
+     *
+     * @details The stroke is squared off at the endpoint of a path. There is no projection beyond the end of a path.
+     */
+    e_lineCapButt = 0,
+    /**
+     * @brief   The Round Line Cap Type.
+     *
+     * @details A semicircular arc with a diameter equal to the line width is drawn around the endpoint and filled in.
+     */
+    e_lineCapRound = 1,
+    /**
+     * @brief   The Projecting Square Line Cap Type.
+     *
+     * @details The stroke continues beyond the endpoint of the path for a distance equal to half the line width and is squared off.
+     */
+    e_lineCapSquare = 2
+};
+
+/**
+ * @brief	Class for PDF graph states.
+ */
+@interface FSGraphState : NSObject
+{
+    /** @brief SWIG proxy related property, it's deprecated to use it. */
+    void *swigCPtr;
+    /** @brief SWIG proxy related property, it's deprecated to use it. */
+    BOOL swigCMemOwn;
+}
+/**
+ * @brief   Blend mode for transparent imaging model.
+ *
+ * @details Please refer to {@link FS_RENDERBLENDMODE::e_renderBlendNormal FS_RENDERBLENDMODE::e_renderBlendXXX} values and it should be one of these values.
+ */
+@property (nonatomic,assign) enum FS_RENDERBLENDMODE blendMode;
+/**
+ * @brief   Line width.
+ *
+ * @details It should be a non-negative number in PDF coordinate system. If 0 is set to this, it will be treated as 1 by default.
+ */
+@property (nonatomic,assign) float lineWidth;
+/**
+ * @brief   Line join style
+ *
+ * @details The line join style specifies the shape to be used at the corners of paths that are stroked.
+ *          Please refer to {@link FS_LINEJOINTYPE::e_lineJoinMiter FS_LINEJOINTYPE::e_lineJoinXXX} values and it should be one of these values.
+ */
+@property (nonatomic,assign) enum FS_LINEJOINTYPE lineJoin;
+/**
+ * @brief   The miter limit for line join.
+ *
+ * @details When two line segments meet at a sharp angle and mitered joins have been specified as the line join style,
+ *          it is possible for the miter to extend far beyond the thickness of the line stroking the path.
+ *          The miter limit imposes a maximum on the ratio of the miter length to the line width.
+ *          When the limit is exceeded, the join is converted from a miter to a bevel.<br>
+ *          Please refer to <PDF Reference 1.7> P217 "Miter Limit" for more details.
+ */
+@property (nonatomic,assign) float miterLimit;
+/**
+ * @brief   Line cap style.
+ *
+ * @details The line cap style specifies the shape to be used at the ends of open sub-paths (and dashes, if any) when they are stroked.
+ *          Please refer to {@link FS_LINECAPTYPE::e_lineCapButt FS_LINECAPTYPE::e_lineCapXXX} values and it should be one of these values.
+ */
+@property (nonatomic,assign) enum FS_LINECAPTYPE lineCap;
+/** @brief  Dash phase for line dash pattern.*/
+@property (nonatomic,assign) float dashPhase;
+/**
+ * @brief   Set a NSArray object that represents the dash patterns, with at most 16 valid elements.
+ *
+ * @param[in]   value   Dash patterns.
+ *
+ * @details The value of useful elements in this array should not be negative.<br>
+ *          In this array, an element with integer value -1 means that all the elements before this element are useful,
+ *          and this element with the rest will be ignored.<br>
+ *          If no element's value is -1, that means all of 16 elements are useful.
+ */
+@property (nonatomic,retain) NSArray<NSNumber *>* dashes;
+
+/** @brief SWIG proxy related function, it's deprecated to use it. */
+-(void*)getCptr;
+/** @brief SWIG proxy related function, it's deprecated to use it. */
+-(id)initWithCptr: (void*)cptr swigOwnCObject: (BOOL)ownCObject;
+
+/**
+ * @brief   Set value.
+ *
+ * @param[in]   blendMode       Blend mode for transparent imaging model.
+ *                              Please refer to {@link FS_RENDERBLENDMODE::e_renderBlendNormal FS_RENDERBLENDMODE::e_renderBlendXXX} values and it should be one of these values.
+ * @param[in]   lineWidth       Line width. If 0 is set to this, it will be treated as 1 by default.
+ * @param[in]   lineJoin        Line join style.
+ *                              Please refer to {@link FS_LINEJOINTYPE::e_lineJoinMiter FS_LINEJOINTYPE::e_lineJoinXXX} values and it should be one of these values.
+ * @param[in]   miterLimit      The miter limit for line join.
+ * @param[in]   lineCap         Line cap style.
+ *                              Please refer to {@link FS_LINECAPTYPE::e_lineCapButt FS_LINECAPTYPE::e_lineCapXXX} values and it should be one of these values.
+ * @param[in]   dashPhase       Dash phase for line dash pattern.
+ * @param[in]   dashes          A float array that represents the dash patterns, with at most 16 valid elements.
+ *                              The value of useful elements in this array should not be negative.<br>
+ *                              In this array, an element with integer value -1 means that all the elements before this element are useful,
+ *                              and this element with the rest will be ignored.<br>
+ *                              If no element's value is -1, that means all of 16 elements are useful.
+ *
+ * @return  None.
+ */
+-(void)set: (enum FS_RENDERBLENDMODE)blendMode lineWidth: (float)lineWidth lineJoin: (enum FS_LINEJOINTYPE)lineJoin miterLimit: (float)miterLimit lineCap: (enum FS_LINECAPTYPE)lineCap dashPhase: (float)dashPhase dashes: (NSArray<NSNumber *>*)dashes;
+
+-(id)init;
+
+-(void)dealloc;
+
+@end
+    
+/**
+ * @brief	Class to access marked content.
+ *
+ * @details	To get a marked content object, please use function {@link FSPDFGraphicsObject::getMarkedContent}.
+ *			Please refer to Section 10.5 in <PDF Reference 1.7> which describes Marked Content of PDF Content Stream.
+ *
+ * @see	FSPDFGraphicsObject
+ */
+@interface FSPDFMarkedContent : NSObject
+{
+    /** @brief SWIG proxy related property, it's deprecated to use it. */
+    void *swigCPtr;
+    /** @brief SWIG proxy related property, it's deprecated to use it. */
+    BOOL swigCMemOwn;
+}
+/** @brief SWIG proxy related function, it's deprecated to use it. */
+-(void*)getCptr;
+/** @brief SWIG proxy related function, it's deprecated to use it. */
+-(id)initWithCptr: (void*)cptr swigOwnCObject: (BOOL)ownCObject;
+/**
+ * @brief   Check whether current marked content object has a specified marked content item or not.
+ *
+ * @param[in]   tagName     The tag name to be checked, in UTF-8 encoding.
+ *
+ * @return  <b>YES</b> means current marked content object has the specified marked content item.
+ *          <b>NO</b> means current marked content object has the specified marked content item.
+ *
+ * @exception   e_errParam  Value of any input parameter is invalid.
+ * @exception   e_errFormat Any input UTF-8 string parameter is not in UTF-8 encoding.
+ */
+-(BOOL)hasTag: (NSString *)tagName;
+/**
+ * @brief   Get the count of marked content items.
+ *
+ * @details A marked content object may be nested one within another, and this function is used to get the count of marked content items
+ *          in the current marked content sequence.
+ *
+ * @return  The count of marked content items.
+ */
+-(int)getItemCount;
+/**
+ * @brief   Get the tag name of a marked content item, specified by index.
+ *
+ * @details A marked content object may be nested one within another, and this function is used to get the count of marked content items
+ *          in the current marked content sequence.
+ *
+ * @param[in]   index   Item index. Valid range: from 0 to (<i>count</i>-1).
+ *                      <i>count</i> is returned by function {@link FSPDFMarkedContent::getItemCount}.
+ *
+ * @return  The tag name, in UTF-8 encoding.
+ *
+ * @exception   e_errParam  Value of any input parameter is invalid.
+ */
+-(NSString *)getItemTagName: (int)index;
+/**
+ * @brief   Get marked-content identifier (MCID) of a marked content item, specified by index.
+ *
+ * @param[in]   index   Item index. Valid range: from 0 to (<i>count</i>-1).
+ *                      <i>count</i> is returned by function {@link FSPDFMarkedContent::getItemCount}.
+ *
+ * @return  The MCID value.
+ *          A negative number means that the specified marked content item does not have a MCID.
+ *
+ * @exception   e_errParam  Value of any input parameter is invalid.
+ */
+-(int)getItemMCID: (int)index;
+/**
+ * @brief   Get the property dictionary of a marked content item, specified by index.
+ *
+ * @param[in]   index   Item index. Valid range: from 0 to (<i>count</i>-1).
+ *                      <i>count</i> is returned by function {@link FSPDFMarkedContent::getItemCount}.
+ *
+ * @return  A ::FSPDFDictionary represents the property dictionary.
+ *          <b>nil</b> means no property dictionary.
+ *
+ * @exception   e_errParam  Value of any input parameter is invalid.
+ */
+-(FSPDFDictionary*)getItemPropertyDict: (int)index;
+/**
+ * @brief   Add a new marked content item.
+ *
+ * @param[in]   tagName         New tag name, in UTF-8 encoding. It should not be nil or an empty string.
+ *                              If parameter <i>tagName</i> exists in current marked content object, it cannot be added to current marked content object again.
+ * @param[in]   propertyDict    A property dictionary.
+ *                              <b>nil</b> means the new marked content item will not have a property dictionary.
+ *
+ * @return  The index of the newly added marked content item.
+ *          If there is any error, this function will return -1.
+ *
+ * @exception   e_errParam      Value of any input parameter is invalid.
+ * @exception   e_errFormat     Any input UTF-8 string parameter is not in UTF-8 encoding.
+ * @exception   e_errConflict   Input tag name has already existed and cannot be added again.
+ * @exception   e_errUnknown    Any unknown error occurs.
+ */
+-(int)addItem: (NSString *)tagName propertyDict: (FSPDFDictionary*)propertyDict;
+/**
+ * @brief   Remove a marked content item by tag name.
+ *
+ * @param[in]   tagName     Tag name, in UTF-8 encoding. It should not be nil or an empty string.
+ *
+ * @return  <b>YES</b> means success, while <b>NO</b> means failure.
+ *
+ * @exception   e_errParam      Value of any input parameter is invalid.
+ * @exception   e_errFormat     Any input UTF-8 string parameter is not in UTF-8 encoding.
+ * @exception   e_errUnknown    Any unknown error occurs.
+ */
+-(BOOL)removeItem: (NSString *)tagName;
+-(id)init;
+
+-(void)dealloc;
+
+@end
+    
+/**
+ * @brief	Class to access a PDF graphics object.
+ *
+ * @details	A PDF page's content usually consists of a sequence of graphics objects.
+ *			Each graphics object contains its state information, data and instructions for rendering.
+ *			Class ::FSPDFGraphicsObject is the base class for all types of PDF graphics objects. It offers the base functions to access graphics object's common properties.
+ *			For concrete graphics object types, please refer to derived classes. <br>
+ *			To get or insert/remove a graphics object, please refer to class ::FSPDFGraphicsObjects.<br>
+ *			If any change is done to a PDF graphics object, please remember to call function {@link FSPDFGraphicsObjects::generateContent}
+ *			for the ::FSPDFGraphicsObjects object (to which current object belongs) before saving document.
+ *			(If the ::FSPDFGraphicsObjects object is just a PDF page, just call function {@link FSPDFPage::generateContent}.)<br>
+ *			Please refer to comment of function {@link FSPDFGraphicsObjects::generateContent} and {@link FSPDFPage::generateContent} for more details.
+ *
+ * @see	FSPDFGraphicsObjects
+ * @see	FSPDFPage
+ */
+@interface FSPDFGraphicsObject : NSObject
+{
+    /** @brief SWIG proxy related property, it's deprecated to use it. */
+    void *swigCPtr;
+    /** @brief SWIG proxy related property, it's deprecated to use it. */
+    BOOL swigCMemOwn;
+}
+/** @brief SWIG proxy related function, it's deprecated to use it. */
+-(void*)getCptr;
+/** @brief SWIG proxy related function, it's deprecated to use it. */
+-(id)initWithCptr: (void*)cptr swigOwnCObject: (BOOL)ownCObject;
+/**
+ * @brief   Get the type of current graphics object.
+ *
+ * @return  Graphics object type.
+ *          Please refer to {@link FS_GRAPHICSOBJECTTYPE::e_graphicsObjTypeText FS_GRAPHICSOBJECTTYPE::e_graphicsObjTypeXXX} values and it would be one of these values
+ *          except {@link FS_GRAPHICSOBJECTTYPE::e_graphicsObjTypeAll}.
+ */
+-(enum FS_GRAPHICSOBJECTTYPE)getType;
+/**
+ * @brief   Get the rectangle of current graphics object.
+ *
+ * @return  Rectangle of current graphics object.
+ *          If there is any error, this function will return a ::FSRectF with all values 0.
+ */
+-(FSRectF*)getRect;
+/**
+ * @brief   Check whether current graphics object has transparency or not.
+ *
+ * @return  <b>YES</b> means current graphics object has transparency, while <b>NO</b> means not.
+ */
+-(BOOL)hasTransparency;
+/**
+ * @brief   Get the stroke color.
+ *
+ * @details Text, path, and form XObject can have this property.
+ *
+ * @return  Color value, in format 0xAARRGGBB.
+ */
+-(unsigned int)getStrokeColor;
+/**
+ * @brief   Get the fill color.
+ *
+ * @details Text, path, and form XObject can have this property.
+ *
+ * @return  Color value, in format 0xAARRGGBB.
+ */
+-(unsigned int)getFillColor;
+/**
+ * @brief   Set the stroke color.
+ *
+ * @details Text, path, and form XObject can have this property.
+ *          If current graphics object is {@link FS_GRAPHICSOBJECTTYPE::e_graphicsObjTypeText} and the text mode is {@link FS_TEXTMODE::e_textModeFill},
+ *          the stroke color will not effect for the text graphics object.<br>
+ *          If try to set stroke color for rest unsupported types, {@link FS_ERRORCODE::e_errUnsupported} will be thrown.
+ *
+ * @param[in]   color   New color value, in format 0xAARRGGBB.
+ *
+ * @return  None.
+ *
+ * @exception   e_errUnsupported    Not support to set this property for graphics object in current type.
+ */
+-(void)setStrokeColor: (unsigned int)color;
+/**
+ * @brief   Set the fill color.
+ *
+ * @details Text, path, and form XObject can have this property.
+ *          If try to set fill color for rest unsupported types, {@link FS_ERRORCODE::e_errUnsupported} will be thrown.<br>
+ *
+ * @param[in]   color   New color value, in format 0xAARRGGBB.
+ *
+ * @return  None.
+ *
+ * @exception   e_errUnsupported    Not support to set this property for graphics object in current type.
+ */
+-(void)setFillColor: (unsigned int)color;
+/**
+ * @brief   Get matrix.
+ *
+ * @return  Matrix value.
+ *          If there is any error, this function will return a ::FSMatrix with all values 0.
+ */
+-(FSMatrix*)getMatrix;
+/**
+ * @brief   Set matrix.
+ *
+ * @param[in]   matrix      New matrix value.
+ *
+ * @return  None.
+ *
+ * @exception   e_errUnknown        Any unknown error occurs.
+ */
+-(void)setMatrix: (FSMatrix*)matrix;
+/**
+ * @brief   Transform current graphics object.
+ *
+ * @details After this function finishes successfully, please call function {@link FSPDFPage::generateContent} before saving current page;
+ *          otherwise the change of current graphics object could not be saved to document.
+ *
+ * @param[in]   matrix          Transform matrix.
+ * @param[in]   needTransformClipPath   <b>YES</b> means to transform clip path with current graphics object.
+ *                              <b>NO</b> means to transform current graphics object only.
+ *
+ * @return  <b>YES</b> means success, while <b>NO</b> means failure.
+ */
+-(BOOL)transform: (FSMatrix*)matrix needTransformClipPath: (BOOL)needTransformClipPath;
+/**
+ * @brief   Clone a new graphics object.
+ *
+ * @details Newly cloned graphics object is related to the same page with current graphics object by default.
+ *          Newly cloned graphics object can only be used inside the PDF file which contains current graphics object.
+ *
+ * @return  Cloned graphics object.
+ *          If there is any error, this function will return <b>nil</b>.<br>
+ */
+-(FSPDFGraphicsObject*)clone;
+/**
+ * @brief   Get graph state.
+ *
+ * @details Form XObjet, path and text object can have this property.
+ *
+ * @return  Graph state.
+ */
+-(FSGraphState*)getGraphState;
+/**
+ * @brief   Set graph state.
+ *
+ * @details Form XObjet, path and text object can have this property.
+ *          If try to set graph state to rest unsupported types, {@link FS_ERRORCODE::e_errUnsupported} will be thrown.<br>
+ *
+ * @param[in]   graphState  New graph state.
+ *
+ * @return  None.
+ *
+ * @exception   e_errUnsupported    Not support to set this property for graphics object in current type.
+ * @exception   e_errOutOfMemory    Out-of-memory error occurs.
+ */
+-(void)setGraphState: (FSGraphState*)graphState;
+/**
+ * @brief   Get the count of path clip.
+ *
+ * @return  Count of path clip.
+ */
+-(int)getClipPathCount;
+/**
+ * @brief   Get a path clip by index.
+ *
+ * @param[in]   index   Path clip index. Valid range: from 0 to (<i>count</i>-1).
+ *                      <i>count</i> is returned by function {@link FSPDFGraphicsObject::getClipPath:}.
+ *
+ * @return  Path data.
+ *          If there is any error, this function will return <b>nil</b>.
+ *
+ * @exception   e_errParam          Value of any input parameter is invalid.
+ * @exception   e_errOutOfMemory    Out-of-memory error occurs.
+ */
+-(FSPDFPath*)getClipPath: (int)index;
+/**
+ * @brief   Get the fill mode of a path clip by index.
+ *
+ * @param[in]   index   Path clip index. Valid range: from 0 to (<i>count</i>-1).
+ *                      <i>count</i> is returned by function {@link FSPDFGraphicsObject::getClipPath:}.
+ *
+ * @return  Fill mode.
+ *          Please refer to {@link FS_FILLMODE::e_fillModeNone FS_FILLMODE::e_fillModeXXX} values and it would be one of these values.
+ *
+ * @exception   e_errParam  Value of any input parameter is invalid.
+ */
+-(enum FS_FILLMODE)getClipPathFillMode: (int)index;
+/**
+ * @brief   Add a path for clipping.
+ *
+ * @param[in]   path        Path data to be added to current graphics object.
+ * @param[in]   fillMode    Fill mode for parameter <i>path</i>.
+ *                          Please refer to {@link FS_FILLMODE::e_fillModeNone FS_FILLMODE::e_fillModeXXX} values and it should be one of these values.
+ *
+ * @return  <b>YES</b> means success, while <b>NO</b> means failure.
+ *
+ * @exception   e_errParam     Value of input parameter is invalid.
+ */
+-(BOOL)addClipPath: (FSPDFPath*)path fillMode: (enum FS_FILLMODE)fillMode;
+/**
+ * @brief   Remove a path clip by index.
+ *
+ * @param[in]   index   Path clip index. Valid range: from 0 to (<i>count</i>-1).
+ *                      <i>count</i> is returned by function {@link FSPDFGraphicsObject::getClipPath:}.
+ *
+ * @return  <b>YES</b> means success, while <b>NO</b> means failure.
+ *
+ * @exception   e_errParam  Value of any input parameter is invalid.
+ */
+-(BOOL)removeClipPath: (int)index;
+/**
+ * @brief   Get the count of text clip.
+ *
+ * @return  Count of text clip.
+ */
+-(int)getClipTextObjectCount;
+/**
+ * @brief   Get the text object of a text clip by index.
+ *
+ * @param[in]   index   Text clip index. Valid range: from 0 to (<i>count</i>-1).
+ *                      <i>count</i> is returned by function {@link FSPDFGraphicsObject::getClipTextObjectCount}.
+ *
+ * @return  A text graphics object.
+ *          If there is any error, this function will return <b>nil</b>.
+ *
+ * @exception   e_errParam  Value of any input parameter is invalid.
+ */
+-(FSPDFTextObject*)getClipTextObject: (int)index;
+/**
+ * @brief   Add text object for clipping.
+ *
+ * @param[in]   textObj     Text object to be added for clipping.
+ *
+ * @return  <b>YES</b> means success, while <b>NO</b> means failure.
+ *
+ * @exception   e_errParam  Value of any input parameter is invalid.
+ */
+-(BOOL)addClipTextObject: (FSPDFTextObject*)textObj;
+/**
+ * @brief   Remove a text clip by index for clipping.
+ *
+ * @param[in]   index   Path clip index. Valid range: from 0 to (<i>count</i>-1).
+ *                      <i>count</i> is returned by function {@link FSPDFGraphicsObject::getClipTextObjectCount}.
+ *
+ * @return  <b>YES</b> means success, while <b>NO</b> means failure.
+ *
+ * @exception   e_errParam      Value of any input parameter is invalid.
+ * @exception   e_errUnknown    Any unknown error occurs.
+ */
+-(BOOL)removeClipTextObject: (int)index;
+/**
+ * @brief   Get clip rectangle.
+ *
+ * @return  Clip rectangle.
+ *          A ::FSRectF with all values 0 means no clip rectangle.
+ */
+-(FSRectF*)getClipRect;
+/**
+ * @brief   Set clip rectangle.
+ *
+ * @details New clip rectangle will be set with fill mode {@link FS_FILLMODE::e_fillModeWinding} by default.
+ *
+ * @param[in]   clipRect    New clip rectangle.
+ *
+ * @return  None.
+ */
+-(void)setClipRect: (FSRectF*)clipRect;
+/**
+ * @brief   Clear all clips.
+ *
+ * @return  <b>YES</b> means success, while <b>NO</b> means failure.
+ */
+-(BOOL)clearClips;
+/**
+ * @brief   Get marked content object
+ *
+ * @return  A marked content object.
+ */
+-(FSPDFMarkedContent*)getMarkedContent;
+-(id)init;
+
+-(void)dealloc;
+
+@end
+    
+/**
+ * @brief   Enumeration for text rendering mode.
+ *
+ * @details Values of this enumeration should be used alone.
+ */
+enum FS_TEXTMODE {
+    /** @brief  Text mode: fill text. */
+    e_textModeFill = 0,
+    /** @brief  Text mode: stroke text. */
+    e_textModeStroke = 1,
+    /** @brief  Text mode: fill and stroke text. */
+    e_textModeFillStroke = 2,
+    /** @brief  Text mode: neither fill nor stroke text, to make it invisible. */
+    e_textModeInvisible = 3,
+    /** @brief  Text mode: fill text and add to path for clipping. */
+    e_textModeFillClip = 4,
+    /** @brief  Text mode: stroke text and add to path for clipping. */
+    e_textModeStrokeClip = 5,
+    /** @brief  Text mode: fill and stroke text, and add to path for clipping. */
+    e_textModeFillStrokeClip = 6,
+    /** @brief  Text mode: add text to path for clipping. */
+    e_textModeClip = 7
+};
+
+/**
+ * @brief	Class for PDF text states
+ */
+@interface FSPDFTextState : NSObject
+{
+    /** @brief SWIG proxy related property, it's deprecated to use it. */
+    void *swigCPtr;
+    /** @brief SWIG proxy related property, it's deprecated to use it. */
+    BOOL swigCMemOwn;
+}
+/** @brief SWIG proxy related function, it's deprecated to use it. */
+-(void*)getCptr;
+/** @brief SWIG proxy related function, it's deprecated to use it. */
+-(id)initWithCptr: (void*)cptr swigOwnCObject: (BOOL)ownCObject;
+/**
+ * @brief   Set value.
+ *
+ * @param[in]   version         Version of this structure, which is used to decide which members are useful. Currently, only 1 is valid.
+ * @param[in]   font            (Version 1) New font object. It should not be <b>nil</b>.
+ * @param[in]   fontSize        (Version 1) New font size. It should be above 0.
+ * @param[in]   charSpace       (Version 1) Character spacing.
+ * @param[in]   wordSpace       (Version 1) Word spacing (only apply to space character).
+ * @param[in]   textMode        (Version 1) Text rendering mode.
+ *                              Please refer to {@link FS_TEXTMODE::e_textModeFill FS_TEXTMODE::e_textModeXXX} values and it should be one of these values.
+ * @param[in]   originPosition  (Version 1) The origin point, in PDF coordinate system.
+ * @param[in]   textMatrix   (Version 1) Text transformation matrix.
+ *
+ * @return  None.
+ */
+-(void)set: (unsigned int)version font: (FSFont*)font fontSize: (float)fontSize charSpace: (float)charSpace wordSpace: (float)wordSpace textMode: (enum FS_TEXTMODE)textMode originPosition: (FSPointF*)originPosition textMatrix: (NSArray<NSNumber*>*)textMatrix;
+/**
+ * @brief   Version of this structure. Currently, only 1 is valid.
+ *
+ * @details This structure may be extended in the future. So the version is used to separate the different extended members.
+ */
+@property (nonatomic,assign) unsigned int version;
+/** @brief   Font object.*/
+@property (nonatomic,retain) FSFont* font;
+/** @brief   Font size. If valid, it should be above 0.*/
+@property (nonatomic,assign) float fontSize;
+/**
+ * @brief   Character spacing.
+ *
+ * @details For horizontal writing, a positive value has the effect of expanding the distance between glyphs,
+ *          whereas for vertical writing, a negative value has this effect.
+ */
+@property (nonatomic,assign) float charSpace;
+/**
+ * @brief   Word spacing (only apply to space character).
+ *
+ * @details For horizontal writing, a positive value has the effect of increasing the spacing between words.
+ *          For vertical writing, a positive value decreases the spacing between words (and a negative value increases it),
+ *          since vertical coordinates increase from bottom to top.
+ *
+ * @note    This will not take effect if {@link FSPDFTextState::font} is an embedded font.
+ */
+@property (nonatomic,assign) float wordSpace;
+/**
+ * @brief   Text rendering mode.
+ *
+ * @details Please refer to {@link FS_TEXTMODE::e_textModeFill FS_TEXTMODE::e_textModeXXX} values and it should be one of these values.
+ */
+@property (nonatomic,assign) enum FS_TEXTMODE textMode;
+/** @brief   The origin point, in PDF coordinate system.*/
+@property (nonatomic,retain) FSPointF* originPosition;
+/** @brief   Text transformation matrix.*/
+@property (nonatomic,retain) NSArray<NSNumber*>* textMatrix;
+
+-(id)init;
+
+-(void)dealloc;
+
+@end
+    
+/**
+ * @brief   Class to access a text graphics object.
+ *
+ * @details Text graphics object is a kind of PDF graphics object, so class ::FSPDFTextObject is derived from class ::FSPDFGraphicsObject.
+ *          It offers functions to access text graphics object's data. <br>
+ *          To create a new text graphics object, please use function {@link FSPDFTextObject::create} and then use setting methods
+ *          to set information to the new text graphics object.
+ *
+ * @see FSPDFGraphicsObject
+ */
+@interface FSPDFTextObject : FSPDFGraphicsObject
+/** @brief SWIG proxy related function, it's deprecated to use it. */
+-(void*)getCptr;
+/** @brief SWIG proxy related function, it's deprecated to use it. */
+-(id)initWithCptr: (void*)cptr swigOwnCObject: (BOOL)ownCObject;
+/**
+ * @brief   Create a new text graphics object.
+ *
+ * @return  A new text graphics object.<br>
+ *          If the newly created text graphics object is not inserted to any page or other objects.
+ *
+ * @exception   e_errOutOfMemory    Out-of-memory error occurs.
+ */
++(FSPDFTextObject*)create;
+/**
+ * @brief   Get text string.
+ *
+ * @return  Text string, in UTF-8 encoding.
+ *
+ * @exception   e_errInvalidType    Type of current graphics object is incorrect.
+ * @exception   e_errUnknown        Any unknown error occurs.
+ */
+-(NSString *)getText;
+/**
+ * @brief   Set text string.
+ *
+ * @param[in]   text    New text string, in UTF-8 encoding.
+ *
+ * @return  None.
+ *
+ * @note    Before setting text, please ensure that current text graphics object has valid font (a part of FSPDFTextState).
+ *          If not, please call function {@link FSPDFTextObject::setTextState:textState:isItalic:weight:} to set valid font first; othewise setting text will fail.
+ *
+ * @exception   e_errFormat         Any input UTF-8 string parameter is not in UTF-8 encoding.
+ * @exception   e_errInvalidType    Type of current graphics object is incorrect.
+ * @exception   e_errOutOfMemory    Out-of-memory error occurs.
+ * @exception   e_errUnknown        Any unknown error occurs.
+ */
+-(void)setText: (NSString *)text;
+/**
+ * @brief   Get text state information.
+ *
+ * @param[in]   page    PDF page. Please ensure that current graphics object just belongs to this page.
+ *
+ * @return  Text state information.
+ *
+ * @exception   e_errParam      Value of any input parameter is invalid.
+ * @exception   e_errInvalidType    Type of current graphics object is incorrect.
+ */
+-(FSPDFTextState*)getTextState: (FSPDFPage*)page;
+/**
+ * @brief   Set text state information.
+ *
+ * @param[in]   page        PDF page. Please ensure that current graphics object just belongs to this page.
+ * @param[in]   textState   New text state information.
+ * @param[in]   isItalic    <b>YES</b> means the text of current graphics object is italic, while <b>NO</b> means not.
+ * @param[in]   weight      Original font weight. If the value is larger than 500, that means to use bold.
+ *
+ * @return  None.
+ *
+ * @exception   e_errInvalidType    Type of current graphics object is incorrect.
+ * @exception   e_errOutOfMemory    Out-of-memory error occurs.
+ * @exception   e_errUnknown        Any unknown error occurs.
+ */
+-(void)setTextState: (FSPDFPage*)page textState: (FSPDFTextState*)textState isItalic: (BOOL)isItalic weight: (int)weight;
+-(id)init;
+
+-(void)dealloc;
+
+@end
+    
+/**
+ * @brief   Class to access a path graphics object.
+ *
+ * @details Path graphics object is a kind of PDF graphics object, so class ::FSPDFPathObject is derived from class ::FSPDFGraphicsObject.
+ *          It offers functions to access path graphics object's data. <br>
+ *          To create a new path graphics object, please use function {@link FSPDFPathObject::create} and then use setting methods
+ *          to set information to the new path graphics object.
+ *
+ * @see FSPDFGraphicsObject
+ */
+@interface FSPDFPathObject : FSPDFGraphicsObject
+-(void*)getCptr;
+-(id)initWithCptr: (void*)cptr swigOwnCObject: (BOOL)ownCObject;
+/**
+ * @brief   Create a path graphics object.
+ *
+ * @return  A new path graphics object.<br>
+ *          If the newly created path graphics object is not inserted to any page or other objects.
+ *
+ * @exception   e_errOutOfMemory    Out-of-memory error occurs.
+ */
++(FSPDFPathObject*)create;
+/**
+ * @brief   Get fill mode.
+ *
+ * @return  Fill mode.
+ *          Please refer to {@link FS_FILLMODE::e_fillModeNone FS_FILLMODE::e_fillModeXXX} values and it would be one of these values.
+ *
+ * @exception   e_errInvalidType    Type of current graphics object is incorrect.
+ */
+-(enum FS_FILLMODE)getFillMode;
+/**
+ * @brief   Set fill mode.
+ *
+ * @param[in]   fillMode    Fill mode.
+ *                          Please refer to {@link FS_FILLMODE::e_fillModeNone FS_FILLMODE::e_fillModeXXX} values and it would be one of these values.
+ *
+ * @return  None.
+ *
+ * @exception   e_errParam          Value of any input parameter is invalid.
+ * @exception   e_errInvalidType    Type of current graphics object is incorrect.
+ */
+-(void)setFillMode: (enum FS_FILLMODE)fillMode;
+/**
+ * @brief   Get stroke state
+ *
+ * @return  The stroke state:
+ *          <ul>
+ *          <li><b>YES</b> means current path graphics object is stroked.</li>
+ *          <li><b>NO</b> means current path graphics object is not stroked.</li>
+ *          </ul>
+ *
+ * @exception   e_errInvalidType    Type of current graphics object is incorrect.
+ */
+-(BOOL)getStrokeState;
+/**
+ * @brief   Set stroke state.
+ *
+ * @param[in]   isStroke    <b>YES</b> means current path graphics object is to be stroked.
+ *                          <b>NO</b> means current path graphics object is not to be stroked.
+ *
+ * @return  None.
+ *
+ * @exception   e_errInvalidType    Type of current graphics object is incorrect.
+ */
+-(void)setStrokeState: (BOOL)isStroke;
+/**
+ * @brief   Get the path data.
+ *
+ * @return  Path data.
+ *          If there is any error, this function will return <b>nil</b>.
+ *
+ * @exception   e_errInvalidType    Type of current graphics object is incorrect.
+ * @exception   e_errOutOfMemory        Out-of-memory error occurs.
+ */
+-(FSPDFPath*)getPathData;
+/**
+ * @brief   Set the path data.
+ *
+ * @param[in]   pathData    New path data.
+ *
+ * @return  None.
+ *
+ * @exception   e_errParam          Value of any input parameter is invalid.
+ * @exception   e_errInvalidType    Type of current graphics object is incorrect.
+ */
+-(void)setPathData: (FSPDFPath*)pathData;
+-(id)init;
+
+-(void)dealloc;
+
+@end
+    
+    
+/**
+ * @brief   Class to access a text graphics object.
+ *
+ * @details A form XObject is not only a graphics object, but also a container. A form XObject consists of a set of graphics objects or sub form XObjects.
+ *          Form XObject is a kind of PDF graphics object, so class ::FSPDFFormXObject is derived from class ::FSPDFGraphicsObject.
+ *          It offers functions to access form XObject's data. <br>
+ *          To create a new form XObject graphics object, please use function {@link FSPDFPathObject::create} and then import page content to the new form XObject,
+ *          or insert new graphics object to form XObject through ::FSPDFGraphicsObjects object returned by function {@link FSPDFFormXObject::getGraphicsObjects}.
+ *
+ * @see FSPDFGraphicsObject
+ */
+@interface FSPDFFormXObject : FSPDFGraphicsObject
+-(void*)getCptr;
+-(id)initWithCptr: (void*)cptr swigOwnCObject: (BOOL)ownCObject;
+/**
+ * @brief   Create a form XObject.
+ *
+ * @param[in]   pdfDoc      PDF document.
+ *                          The new image object should be inserted to one page of this PDF document.
+ *
+ * @return  A new form XObject.<br>
+ *          If the newly created form XObject is not inserted to any page or other objects.
+ *
+ * @exception   e_errParam          Value of any input parameter is invalid.
+ * @exception   e_errOutOfMemory    Out-of-memory error occurs.
+ */
++(FSPDFFormXObject*)create: (FSPDFDoc*)pdfDoc;
+/**
+ * @brief   Get stream.
+ *
+ * @return  A ::FSPDFStream that represents the stream.
+ *          If there is any error, this function will return <b>nil</b>.
+ *
+ * @exception   e_errInvalidType    Type of current graphics object is incorrect.
+ */
+-(FSPDFStream*)getStream;
+/**
+ * @brief   Get graphics objects, to manage all the graphic objects in this container.
+ *
+ * @return  A ::FSPDFGraphicsObjects object.
+ *
+ * @exception   e_errInvalidType    Type of current graphics object is incorrect.
+ * @exception   e_errOutOfMemory    Out-of-memory error occurs.
+ */
+-(FSPDFGraphicsObjects*)getGraphicsObjects;
+/**
+ * @brief   Import page content of a specified PDF page to current form XObject.
+ *
+ * @details If this function succeeds, the boundary box of current form XObject will be the same as page's size.
+ *
+ * @param[in]   srcPage             Source page, whose content will be imported to current form XObject.
+ * @param[in]   isAnnotsIncluded    <b>YES</b> means annotations should be included in the content of parameter <i>srcPage</i>.
+ *                                  <b>NO</b> means annotations should be ignored from the content of parameter <i>srcPage</i>.
+ *
+ * @return  <b>YES</b> means success, while <b>NO</b> means failure.
+ *
+ *
+ * @exception   e_errInvalidType    Type of current graphics object is incorrect.
+ * @exception   e_errOutOfMemory    Out-of-memory error occurs.
+ * @exception   e_errUnknown        Any unknown error occurs.
+ */
+-(BOOL)importPageContent: (FSPDFPage*)srcPage isAnnotsIncluded: (BOOL)isAnnotsIncluded;
+-(id)init;
+
+-(void)dealloc;
+
+@end
+    
+/**
+ * @brief   Class to access a shading graphics object.
+ *
+ * @details Shading graphics object is a kind of PDF graphics object, so class ::FSPDFShadingObject is derived from class ::FSPDFGraphicsObject.
+ *          It offers functions to access shading graphics object's data.
+ *
+ * @see FSPDFGraphicsObject
+ */
+@interface FSPDFShadingObject : FSPDFGraphicsObject
+-(void*)getCptr;
+-(id)initWithCptr: (void*)cptr swigOwnCObject: (BOOL)ownCObject;
+/**
+ * @brief   Get the PDF object, a PDF dictionary or a PDF stream object.
+ *
+ * @return  A ::FSPDFObject. It should be a PDF dictionary or a PDF stream object.
+ *          If there is any error, this function will return <b>nil</b>.
+ *
+ * @exception   e_errInvalidType    Type of current graphics object is incorrect.
+ */
+-(FSPDFObject*)getPDFObject;
+-(id)init;
+
+-(void)dealloc;
+
+@end
+    
+/**
+ * @brief   Enumeration for image color space.
+ *
+ * @details Values of this enumeration should be used alone.
+ */
+enum FS_IMAGECOLORSPACE {
+    /** @brief  Color space: Invalid. */
+    e_imgColorSpaceInvalid = 0,
+    /** @brief  Color space: DeviceGray. */
+    e_imgColorSpaceDeviceGray = 1,
+    /** @brief  Color space: DeviceRGB. */
+    e_imgColorSpaceDeviceRGB = 2,
+    /** @brief  Color space: DeviceCMYK. */
+    e_imgColorSpaceDeviceCMYK = 3,
+    /** @brief  Color space: CalGray. */
+    e_imgColorSpaceCalGray = 4,
+    /** @brief  Color space: CalRGB. */
+    e_imgColorSpaceCalRGB = 5,
+    /** @brief  Color space: Lab. */
+    e_imgColorSpaceLab = 6,
+    /** @brief  Color space: Separation. */
+    e_imgColorSpaceSeparation = 8,
+    /** @brief  Color space: DeviceN. */
+    e_imgColorSpaceDeviceN = 9,
+    /** @brief  Color space: Pattern. */
+    e_imgColorSpacePattern = 11,
+    /** @brief  Color space: ICCBased DeviceGray. */
+    e_imgColorSpaceICCBasedDeviceGray = 12,
+    /** @brief  Color space: ICCBased DeviceRGB. */
+    e_imgColorSpaceICCBasedDeviceRGB = 13,
+    /** @brief  Color space: ICCBased DeviceCMYK. */
+    e_imgColorSpaceICCBasedDeviceCMYK = 14
+};
+
+/**
+ * @brief   Class to access a image graphics object.
+ *
+ * @details Image graphics object is a kind of PDF graphics object, so class ::FSPDFImageObject is derived from class ::FSPDFGraphicsObject.
+ *          It offers functions to access image graphics object's data. <br>
+ *          To create a new image graphics object, please use function {@link FSPDFImageObject::create:} and then use setting methods
+ *          to set information to the new image graphics object.
+ *
+ * @see FSPDFGraphicsObject
+ */
+@interface FSPDFImageObject : FSPDFGraphicsObject
+-(void*)getCptr;
+-(id)initWithCptr: (void*)cptr swigOwnCObject: (BOOL)ownCObject;
+/**
+ * @brief   Create a new empty image graphics object.
+ *
+ * @param[in]   pdfDoc      PDF document.
+ *                          The new image graphics object should be inserted to one page of this PDF document then.
+ *
+ * @return  A new image object.<br>
+ *          If the newly created image graphics object is not inserted to any page or other objects.
+ *
+ * @exception   e_errParam          Value of any input parameter is invalid.
+ * @exception   e_errOutOfMemory    Out-of-memory error occurs.
+ */
++(FSPDFImageObject*)create: (FSPDFDoc*)pdfDoc;
+/**
+ * @brief   Set bitmap.
+ *
+ * @param[in]   bitmap  New bitmap.
+ * @param[in]   mask    Mask bitmap. It can be <b>nil</b>.
+ *                      If this is valid, its format should be {@link FS_DIBFORMAT::e_dib8bppMask}. <br>
+ *                      This is useful only when parameter <i>bitmap</i> does not have an alpha channel.
+ *
+ * @return  None
+ *
+ * @exception   e_errInvalidType    Type of current graphics object is incorrect.
+ */
+-(void)setBitmap: (FSBitmap*)bitmap mask: (FSBitmap*)mask;
+/**
+ * @brief   Clone the bitmap.
+ *
+ * @details Currently, only support to clone bitmap in following formats:<br>
+ *          {@link FS_DIBFORMAT::e_dib8bppMask}, {@link FS_DIBFORMAT::e_dibRgb}, {@link FS_DIBFORMAT::e_dibRgb32},
+ *          {@link FS_DIBFORMAT::e_dibArgb}.<br>
+ *          For other unsupported DIB format, this function will return <b>nil</b>.
+ *
+ * @param[in]   page                PDF page. Please ensure that current image graphics object just belongs to this page.
+ *
+ * @return  The new cloned bitmap object.
+ *          <b>nil</b> means the bitmap's DIB format is not supported.
+ *
+ * @exception   e_errParam          Value of input parameter is invalid.
+ * @exception   e_errOutOfMemory    Out-of-memory error occurs.
+ * @exception   e_errInvalidType    Type of current graphics object is incorrect.
+ * @exception   e_errUnknown        Any unknown error occurs.
+ */
+-(FSBitmap*)cloneBitmap: (FSPDFPage*)page;
+/**
+ * @brief   Get color space.
+ *
+ * @return  Color space.
+ *          Please refer to {@link FS_IMAGECOLORSPACE::e_imgColorSpaceDeviceGray FS_IMAGECOLORSPACE::e_imgColorSpaceXXX} values
+ *          and it would be one of these values.
+ *
+ * @exception   e_errInvalidType    Type of current graphics object is incorrect.
+ * @exception   e_errUnknown        Any unknown error occurs.
+ */
+-(enum FS_IMAGECOLORSPACE)getColorSpace;
+/**
+ * @brief   Get image stream.
+ *
+ * @return  A ::FSPDFStream that represents the image stream.
+ *          If there is any error, this function will return <b>nil</b>.
+ *
+ * @exception   e_errInvalidType    Type of current graphics object is incorrect.
+ */
+-(FSPDFStream*)getStream;
+-(id)init;
+
+-(void)dealloc;
+
+@end
+    
+    
+/**
+ * @brief   Class to access graphics objects.
+ *
+ * @details This class is a manager for graphics objects. It stores all its graphics objects in a graphics list, and use a pointer to enumerate them.
+ *          A pointer can be used to get one graphics object, insert new graphics object and even remove one.<br>
+ *          If any graphics object is changed, or graphics object is inserted/removed, function {@link FSPDFGraphicsObjects::generateContent} should be called
+ *          to ensure all these changes would be stored to PDF document.<br>
+ *          A PDF page's content usually consists of a sequence of graphics objects, so class ::FSPDFPage is derived from class ::FSPDFGraphicsObjects in order that ::FSPDFPage can access its graphics object.<br>
+ *          A form XObject, a kind of graphics object, is a self-contained description of any  sequence of graphics objects,
+ *          so function {@link FSPDFFormXObject::getGraphicsObjects} can be used to retreive a ::FSPDFGraphicsObjects object from a form XObject
+ *          in order to manage graphics objects which are contained in a form XObject.
+ *
+ * @see FSPDFPage
+ * @see FSPDFFormXObject
+ * @see FSPDFGraphicsObject
+ */
+@interface FSPDFGraphicsObjects : NSObject
+{
+    /** @brief SWIG proxy related property, it's deprecated to use it. */
+    void *swigCPtr;
+    /** @brief SWIG proxy related property, it's deprecated to use it. */
+    BOOL swigCMemOwn;
+}
+-(void*)getCptr;
+-(id)initWithCptr: (void*)cptr swigOwnCObject: (BOOL)ownCObject;
+/**
+ * @brief   Get the position of first graphics object in graphics object list, based on type filter.
+ *
+ * @details After getting a position in the graphics object list, then user can call function {@link FSPDFGraphicsObjects::getGraphicsObject:} to get the graphics object with this position.
+ *
+ * @param[in]   filter      Type filter that specifies which kind of graphics object is to be gotten.
+ *                          Please refer to {@link FS_GRAPHICSOBJECTTYPE::e_graphicsObjTypeAll FS_GRAPHICSOBJECTTYPE::e_graphicsObjTypeXXX} values and it should be one of these values.
+ *                          {@link FS_GRAPHICSOBJECTTYPE::e_graphicsObjTypeAll} means for all kinds of graphics objects.
+ *
+ * @return  A pointer that represents the position of first graphics object in graphics object list.
+ *          <b>nil</b> means there is no graphics object.
+ *
+ * @exception   e_errParam      Value of input parameter is invalid.
+ * @exception   e_errNotParsed  This can only be thrown when current graphics objects is a PDF page and the page has not been parsed yet.
+ * @exception   e_errUnknown    Any unknown error occurs.
+ */
+-(void*)getFirstGraphicsObjectPosition: (enum FS_GRAPHICSOBJECTTYPE)filter;
+/**
+ * @brief   Get the position of last graphics object in graphics object list, based on type filter.
+ *
+ * @details After getting a position in the graphics object list, then user can call function {@link FSPDFGraphicsObjects::getGraphicsObject:} to get the graphics object with this position.
+ *
+ * @param[in]   filter      Type filter that specifies which kind of graphics object is to be gotten.
+ *                          Please refer to {@link FS_GRAPHICSOBJECTTYPE::e_graphicsObjTypeAll FS_GRAPHICSOBJECTTYPE::e_graphicsObjTypeXXX} values and it should be one of these values.
+ *                          {@link FS_GRAPHICSOBJECTTYPE::e_graphicsObjTypeAll} means for all kinds of graphics objects.
+ *
+ * @return  A pointer that represents the position of last graphics object in graphics object list.
+ *          <b>nil</b> means there is no graphics object.
+ *
+ * @exception   e_errParam      Value of input parameter is invalid.
+ * @exception   e_errNotParsed  This can only be thrown when current graphics objects is a PDF page and the page has not been parsed yet.
+ * @exception   e_errUnknown    Any unknown error occurs.
+ */
+-(void*)getLastGraphicsObjectPosition: (enum FS_GRAPHICSOBJECTTYPE)filter;
+/**
+ * @brief   Get the position of next graphics object in graphics object list, based on type filter and specified current position.
+ *
+ * @details After getting a position in the graphics object list, then user can call function {@link FSPDFGraphicsObjects::getGraphicsObject:} to get the graphics object with this position.
+ *
+ * @param[in]   filter      Type filter that specifies which kind of graphics object is to be gotten.
+ *                          Please refer to {@link FS_GRAPHICSOBJECTTYPE::e_graphicsObjTypeAll FS_GRAPHICSOBJECTTYPE::e_graphicsObjTypeXXX} values and it should be one of these values.
+ *                          {@link FS_GRAPHICSOBJECTTYPE::e_graphicsObjTypeAll} means for all kinds of graphics objects.
+ * @param[in]   pos         A pointer that indicates a position in the graphics object list, whose next position is to be gotten. It should not be <b>nil</b>
+ *
+ * @return  A pointer that represents the position of next graphics object in graphics object list.
+ *          <b>nil</b> means parameter <i>position</i> is the last position in graphics object list, or there is any error.
+ *
+ * @exception   e_errParam      Value of input parameter is invalid.
+ * @exception   e_errNotParsed  This can only be thrown when current graphics objects is a PDF page and the page has not been parsed yet.
+ * @exception   e_errUnknown    Any unknown error occurs.
+ */
+-(void*)getNextGraphicsObjectPosition: (enum FS_GRAPHICSOBJECTTYPE)filter pos: (void*)pos;
+/**
+ * @brief   Get the position of previous graphics object in graphics object list, based on type filter and specified current position.
+ *
+ * @details After getting a position in the graphics object list, then user can call function {@link FSPDFGraphicsObjects::getGraphicsObject:} to get the graphics object with this position.
+ *
+ * @param[in]   filter      Type filter that specifies which kind of graphics object is to be gotten.
+ *                          Please refer to {@link FS_GRAPHICSOBJECTTYPE::e_graphicsObjTypeAll FS_GRAPHICSOBJECTTYPE::e_graphicsObjTypeXXX} values and it should be one of these values.
+ *                          {@link FS_GRAPHICSOBJECTTYPE::e_graphicsObjTypeAll} means for all kinds of graphics objects.
+ * @param[in]   pos         A pointer that indicates a position in the graphics object list, whose previous position is to be gotten. It should not be <b>nil</b>
+ *
+ * @return  A pointer that represents the position of previous graphics object in graphics object list.
+ *          <b>nil</b> means parameter <i>position</i> is already in the first position in graphics object list, or there is any error.
+ *
+ * @exception   e_errParam     Value of input parameter is invalid.
+ * @exception   e_errNotParsed  This can only be thrown when current graphics objects is a PDF page and the page has not been parsed yet.
+ * @exception   e_errUnknown    Any unknown error occurs.
+ */
+-(void*)getPrevGraphicsObjectPosition: (enum FS_GRAPHICSOBJECTTYPE)filter pos: (void*)pos;
+/**
+ * @brief   Get the graphics object by position in graphics object list.
+ *
+ * @param[in]   pos     A pointer that indicates the position in the graphics object list.
+ *                      It should not be <b>nil</b> and should be returned by function {@link FSPDFGraphicsObjects::getNextGraphicsObjectPosition:pos:}.
+ *
+ * @return  A ::FSPDFGraphicsObject object.
+ *          If there is any error, this function will return <b>nil</b>.
+ *
+ * @exception   e_errParam      Value of input parameter is invalid.
+ * @exception   e_errNotParsed  This can only be thrown when current graphics objects is a PDF page and the page has not been parsed yet.
+ * @exception   e_errUnknown    Any unknown error occurs.
+ */
+-(FSPDFGraphicsObject*)getGraphicsObject: (void*)pos;
+/**
+ * @brief   Insert a graphics object after the specified position.
+ *
+ * @param[in]   posInsertAfter      Used to specify the position, in order to insert parameter <i>graphicsObj</i> after this position.
+ *                                  <b>nil</b> means that parameter <i>graphicsObj</i> will be inserted before all objects, ignoring the specified type filter.
+ * @param[in]   graphicsObj         A graphics object to be inserted. User should ensure that parameter <i>graphicsObj</i> belongs to the same PDF document as current graphics objects.
+ *
+ * @return  The new position of the inserted graphics object.
+ *
+ * @exception   e_errParam     Value of input parameter is invalid.
+ * @exception   e_errNotParsed  This can only be thrown when current graphics objects is a PDF page and the page has not been parsed yet.
+ * @exception   e_errUnknown    Any unknown error occurs.
+ */
+-(void*)insertGraphicsObject: (void*)posInsertAfter graphicsObj: (FSPDFGraphicsObject*)graphicsObj;
+/**
+ * @brief   Remove a graphics object.
+ *
+ * @details To remove a graphics object by position (function {@link FSPDFGraphicsObjects::removeGraphicsObjectByPosition:})
+ *          is more direct and effective than to remove a graphics object directly (function {@link FSPDFGraphicsObjects::removeGraphicsObject:}).
+ *
+ * @param[in]   graphicsObj A graphics object to be removed.
+ *                          Please ensure this graphics object belongs to current graphics objects.
+ *
+ * @return  <b>YES</b> means success, while <b>NO</b> means failure.
+ *
+ * @exception   e_errParam      Value of input parameter is invalid.
+ * @exception   e_errNotParsed  This can only be thrown when current graphics objects is a PDF page and the page has not been parsed yet.
+ * @exception   e_errUnknown    Any unknown error occurs.
+ */
+-(BOOL)removeGraphicsObject: (FSPDFGraphicsObject*)graphicsObj;
+/**
+ * @brief   Remove a graphics object by position.
+ *
+ * @details To remove a graphics object by position (function {@link FSPDFGraphicsObjects::removeGraphicsObjectByPosition:})
+ *          is more direct and effective than to remove a graphics object directly (function {@link FSPDFGraphicsObjects::removeGraphicsObject:}).
+ *
+ * @param[in]   pos     Used to specify the position of a graphics object, to be removed.
+ *                      It should not be <b>nil</b>.
+ *
+ * @return  <b>YES</b> means success, while <b>NO</b> means failure.
+ *
+ * @exception   e_errParam      Value of input parameter is invalid.
+ * @exception   e_errNotParsed  This can only be thrown when current graphics objects is a PDF page and the page has not been parsed yet.
+ * @exception   e_errUnknown    Any unknown error occurs.
+ */
+-(BOOL)removeGraphicsObjectByPosition: (void*)pos;
+/**
+ * @brief   Generate contents of current graphics objects.
+ *
+ * @return  <b>YES</b> means success, while <b>NO</b> means failure.
+ *
+ * @exception   e_errNotParsed  This can only be thrown when current graphics objects is a PDF page and the page has not been parsed yet.
+ * @exception   e_errOutOfMemory    Out-of-memory error occurs.
+ * @exception   e_errUnknown        Any unknown error occurs.
+ */
+-(BOOL)generateContent;
+
+-(void)dealloc;
+
+@end
 
 /**
  * @brief	Class to access a PDF page.
@@ -6429,13 +8493,8 @@ enum FS_CALCMARGINMODE {
  * @see FSPDFDoc
  * @see FSAnnot
  */
-@interface FSPDFPage : NSObject
-{
-/** @brief SWIG proxy related property, it's deprecated to use it. */
-void *swigCPtr;
-/** @brief SWIG proxy related property, it's deprecated to use it. */
-BOOL swigCMemOwn;
-}
+@interface FSPDFPage : FSPDFGraphicsObjects
+
 /** @brief SWIG proxy related function, it's deprecated to use it. */
 -(void*)getCptr;
 /** @brief SWIG proxy related function, it's deprecated to use it. */
@@ -6511,7 +8570,7 @@ BOOL swigCMemOwn;
  * @brief	Load the thumbnail bitmap.
  *
  * @return	Thumbnail bitmap.<br>
- *			If no thumbnail can be found or there is any error, this function will return <b>nullptr</b>.<br>
+ *			If no thumbnail can be found or there is any error, this function will return <b>nil</b>.<br>
  */
 -(FSBitmap*)loadThumbnail;
 /**
@@ -6696,6 +8755,91 @@ BOOL swigCMemOwn;
  */
 -(FSSignature*)addSignature: (FSRectF*)rect;
 
+/**
+ * @brief	Set page rotation.
+ *
+ * @param[in]	rotate	New page rotation value.
+ *						Please refer to {@link FS_ROTATION::e_rotation0 FS_ROTATION::e_rotationXXX} values and this should be one of these values.
+ *
+ * @return	None.
+ */
+-(void)setRotation: (enum FS_ROTATION)rotate;
+/**
+ * @brief	Set page width and height.
+ *
+ * @details	New page width and height should be positive values.
+ *			If current page is a newly create PDF page by function {@link FSPDFDoc::insertPage:}, current page can be set with any valid new size values.
+ *			If current page is gotten from PDF document, the new page size should not be greater than the original one.
+ *
+ * @param[in]	width	New page width. It should be a positive value and the unit is 1/72 inch.
+ * @param[in]	height	New page height. It should be a positive value and the unit is 1/72 inch.
+ *
+ * @return	None.
+ */
+-(void)setSize: (float)width height: (float)height;
+/**
+ * @brief	Set page box.
+ *
+ * @param[in]	boxType		Page box type.
+ *							Please refer to {@link FS_PAGEBOX::e_pageMediaBox FS_PAGEBOX::e_pageXXXBox} values and it should be one of these values.
+ * @param[in]	box			New box rectangle, in PDF coordinate system.
+ *
+ * @return	None.
+ */
+-(void)setBox: (enum FS_PAGEBOX)boxType box: (FSRectF*)box;
+/**
+ * @brief	Transform a PDF page, including the annotations and form fields on the page.
+ *
+ * @note	This function only supports scaling and translating.
+ *			After this operation, please re-parse current page by function {@link FSPDFPage::startParse:pause:isReparse:} with parameter <i>isReparse</i> <b>YES</b>,
+ *			in order that expected content will be displayed.
+ *
+ * @param[in]	matrix					Transform matrix.
+ * @param[in]	needTransformClipPath	<b>YES</b> means to transform the page with clip rectangle, and <b>NO</b> means not.
+ *
+ * @return	<b>YES</b> means success, while <b>NO</b> means failure.
+ */
+-(BOOL)transform: (FSMatrix*)matrix needTransformClipPath: (BOOL)needTransformClipPath;
+/**
+ * @brief	Set clip rectangle for all page objects on current PDF page.
+ *
+ * @details	After this function finishes successfully, please re-parse current page by function {@link FSPDFPage::startParse:pause:isReparse:} with parameter <i>isReparse</i> <b>YES</b>.
+ *
+ * @param[in]	clipRect		New clip rectangle, in PDF coordinate system.
+ *
+ * @return	None.
+ */
+-(void)setClipRect: (FSRectF*)clipRect;
+/**
+ * @brief	Set page thumbnail.
+ *
+ * @details	Thumbnail image does not use alpha channel. So user is recommended to set a bitmap without alpha channel to be the new thumbnail image.
+ *			If a bitmap with alpha channel is set, the new thumbnail will use white background by default.
+ *
+ * @param[in]	thumbnail		New page thumbnail.
+ *
+ * @return	None.
+ */
+-(void)setThumbnail: (FSBitmap*)thumbnail;
+
+/**
+ * @brief	Add an image to current page from file path.
+ *
+ * @details	The image added is the first frame acquiescently. Supported image types are jpg/png/gif/jpx/bmp.
+ *
+ * @param[in]	imageFilePath		An image file path, including extension name. It should be in UTF-8 encoding and should not be <b>nil</b> or empty.
+ * @param[in]	posPoint			The specific position, in PDF coordination system.
+ * @param[in]	width				The width set into page. The value should be larger than 0.
+ * @param[in]	height				The height set into page.The value should be larger than 0.
+ * @param[in]	isGenerateContent	A boolean value that indicates whether to generate content for page internally or not.
+ *									<b>YES</b> means to generate content internally,
+ *									When using <b>NO</b>, user should ensure to call function {@link FSPDFPage::generateContent} after adding image.
+ *									In order to improve efficiency, users can call {@link FSPDFPage::generateContent} once after adding image many times.
+ *
+ * @return	<b>YES</b> means success, while <b>NO</b> means failure.
+ */
+-(BOOL)addImageFromFilePath: (NSString *)imageFilePath posPoint: (FSPointF*)posPoint width: (float)width height: (float)height isGenerateContent:(BOOL)isGenerateContent;
+
 /** @brief Free the object. */
 -(void)dealloc;
 
@@ -6736,7 +8880,9 @@ BOOL swigCMemOwn;
  *
  * @param[in]	width		Width of a bitmap, in pixels. This should be above 0.
  * @param[in]	height		Height of a bitmap, in pixels. This should be above 0.
- * @param[in]	format		Bitmap format type. It should be one of {@link FS_DIBFORMAT::e_dibRgb}, {@link FS_DIBFORMAT::e_dibRgb32} and {@link FS_DIBFORMAT::e_dibArgb}.
+ * @param[in]	format		Bitmap format type.
+ *							Please refere to {@link FS_DIBFORMAT::e_dibRgb FS_DIBFORMAT::e_dibXXX} values and it should be one of these values,
+ *							except {@link FS_DIBFORMAT::e_dibInvalid}.
  * @param[in]	buffer		A buffer that specifies bitmap data.<br>
  *							If it is not <b>nil</b>, this function will use the parameter <i>buffer</i> to initialize a bitmap.
  *							Please keep the buffer valid during the life-cycle of the bitmap.<br>
@@ -6750,12 +8896,15 @@ BOOL swigCMemOwn;
 /**
  * @brief	Clone current bitmap, with specified clip rectangle.
  *
- * @param[in]	clip	The clipping region in current bitmap, which is to be cloned.
- *						This can be <b>nil</b> to clone the whole bitmap.
- *						If this is not <b>nil</b>, it specifies a clipping region in bitmap to be cloned
- *						and the cloned bitmap will have the same size as the clipping region.
+ * @param[in]	clip	The clipping region in current bitmap, which is to be cloned. <br>
+ *						<ul>
+ *						<li> For rest format, this can be either <b>nil</b> or valid.  If this is <b>nil</b>, that means to clone the whole bitmap.
+ *							 If this is not <b>nil</b>, it specifies a clipping region in bitmap to be cloned
+ *							 and the cloned bitmap will have the same size as the clipping region.
+ *						</li>
+ *						</ul>
  *
- * @return	A new bitmap instance as clone result.
+ * @return	A new bitmap as clone result.
  */
 -(FSBitmap*)clone: (FSRectI*)clip;
 /**
@@ -6788,6 +8937,8 @@ BOOL swigCMemOwn;
 -(int)getBpp;
 /**
  * @brief	Get bitmap buffer.
+ *
+ * @details	Bitmap data are organized in scan-lines, from top to down.
  *
  * @return	Bitmap buffer data.
  *			If any error occurs, <b>nil</b> will be returned.
@@ -6860,6 +9011,9 @@ enum FS_DEVICETYPE {
  *			<li>To render page and annotations, use functions {@link FSRenderer::startRender:matrix:pause:} and {@link FSRenderer::continueRender}.
  *				Function {@link FSRenderer::setRenderContent:} can be used to decide whether to render page and annotation both or not.</li>
  *			<li>To render a single annotation, use function {@link FSRenderer::renderAnnot:matrix:}.</li>
+ *			</li>
+ *			<li>To render a bitmap, use function {@link FSRenderer::startRenderBitmap:matrix:clipRect:interpolation:pause:} and {@link FSRenderer::continueRender}.</li>
+ *			<li>To render a reflow page, use function {@link FSRenderer::startRenderReflowPage:matrix:pause:} and {@link FSRenderer::continueRender}.</li>
  *			</ul>
  */
 @interface FSRenderer : NSObject
@@ -6908,16 +9062,69 @@ BOOL swigCMemOwn;
  *							If this is not <b>nil</b>, it should be a valid pause object implemented by user.
  *
  * @return	{@link FS_PROGRESSSTATE::e_progressFinished} means the rendering is finished successfully.<br>
- *			{@link FS_PROGRESSSTATE::e_progressToBeContinued} means the rendering process is not finished yet and function {@link FSRenderer::continueRender} should be called to continue the process.
+ *			{@link FS_PROGRESSSTATE::e_progressToBeContinued} means the rendering process is not finished yet
+ *			and function {@link FSRenderer::continueRender} should be called to continue the process.<br>
  *			{@link FS_PROGRESSSTATE::e_progressError} means any error occurs.
  */
 -(enum FS_PROGRESSSTATE)startRender: (FSPDFPage*)page matrix: (FSMatrix*)matrix pause: (FSPauseCallback*)pause;
 /**
+ * @brief	Start rendering a reflow page.
+ *
+ * @details	It will take a long time to render a reflow page with complex or large contents, so Foxit PDF SDK uses a progressive process to do this.<br>
+ * 			If the rendering is not finished, please call function {@link FSRenderer::continueRender} to continue the rendering until it is finished.
+ *
+ * @param[in]	reflowPage		A reflow page. It should be parsed.
+ * @param[in]	matrix			The transformation matrix used for rendering, which is usually returned by function {@link FSReflowPage::getDisplayMatrix:offsetY:}.
+ * @param[in]	pause			Pause object which decides if the rendering process needs to be paused.
+ *								This can be <b>nil</b> which means not to pause during the rendering process.
+ *								If this is not <b>nil</b>, it should be a valid pause object implemented by user.
+ *
+ * @return	{@link FS_PROGRESSSTATE::e_progressFinished} means the rendering is finished successfully.<br>
+ *			{@link FS_PROGRESSSTATE::e_progressToBeContinued} means the rendering process is not finished yet 
+ *			and function {@link FSRenderer::continueRender} should be called to continue the process.<br>
+ *			{@link FS_PROGRESSSTATE::e_progressError} means any error occurs.
+ *
+ * @exception	e_errParam		Value of input parameter1 is invalid.
+ */
+-(enum FS_PROGRESSSTATE)startRenderReflowPage: (FSReflowPage*)reflowPage matrix: (FSMatrix*) matrix pause: (FSPauseCallback*)pause;
+/**
+ * @brief	Start rendering a bitmap.
+ *
+ * @details	It will take a long time to render a bitmap with complex or large contents, so Foxit PDF SDK uses a progressive process to do this.<br>
+ *			If the rendering is not finished, please call function {@link FSRenderer::continueRender} to continue the rendering until it is finished.
+ *
+ * @param[in]	bitmap			A bitmap. It should be valid.
+ * @param[in]	matrix			The transformation matrix used for rendering. This matrix is used as image matrix: <br>
+ *								assume that <i>h</i> is image height, <i>w</i> is image width, and then matrix [w 0 0 h 0 0] will produce an identical image.
+ * @param[in]	clipRect		Clip rectangle of the render device. This can be <b>nil</b>.
+ * @param[in]	interpolation	Bitmap interpolation flags.
+ *								Please refere to {@link FS_BITMAPINTERPOLATIONFLAG::e_interpolationDownsample FS_BITMAPINTERPOLATIONFLAG::e_interpolationXXX} values
+ *								and this can be one or a combination of these values.
+ *								This can be 0.
+ * @param[in]	pause			Pause object which decides if the rendering process needs to be paused.
+ *								This can be <b>nil</b> which means not to pause during the rendering process.
+ *								If this is not <b>nil</b>, it should be a valid pause object implemented by user.
+ *
+ * @return	{@link FS_PROGRESSSTATE::e_progressFinished} means the rendering is finished successfully.<br>
+ *			{@link FS_PROGRESSSTATE::e_progressToBeContinued} means the rendering process is not finished yet
+ *			and function {@link FSRenderer::continueRender} should be called to continue the process.<br>
+ *			{@link FS_PROGRESSSTATE::e_progressError} means any error occurs.
+ *
+ * @exception	e_errParam			Value of input parameter is invalid.
+ v
+ * @exception	e_errOutOfMemory	Out-of-memory error occurs.
+ */
+-(enum FS_PROGRESSSTATE)startRenderBitmap: (FSBitmap*)bitmap matrix: (FSMatrix*)matrix clipRect: (FSRectI*)clipRect interpolation: (int)interpolation pause: (FSPauseCallback*)pause;
+/**
  * @brief	Continue rendering process.
  *
  * @return	{@link FS_PROGRESSSTATE::e_progressFinished} means the rendering is finished successfully.<br>
- *			{@link FS_PROGRESSSTATE::e_progressToBeContinued} means the rendering process is not finished yet and function {@link FSRenderer::continueRender} should be called to continue the process.
+ *			{@link FS_PROGRESSSTATE::e_progressToBeContinued} means the rendering process is not finished yet 
+ *			and function {@link FSRenderer::continueRender} should be called to continue the process.<br>
  *			{@link FS_PROGRESSSTATE::e_progressError} means any error occurs.
+ *
+ * @exception	e_errOutOfMemory	Out-of-memory error occurs.
+ * @exception	e_errUnknown		Any unknown error occurs.
  */
 -(enum FS_PROGRESSSTATE)continueRender;
 /**
@@ -6938,7 +9145,8 @@ BOOL swigCMemOwn;
  * @details	If this function is not called, default value ({@link FS_RENDERCONTENTFLAG::e_renderPage} | {@link FS_RENDERCONTENTFLAG::e_renderAnnot}) will be used.
  *
  * @param[in]	renderContentFlag		Render content flags.
- *										Please refere to {@link FS_RENDERCONTENTFLAG::e_renderPage FS_RENDERCONTENTFLAG::e_renderXXX} values and this should be one or a combination of these values.
+ *										Please refere to {@link FS_RENDERCONTENTFLAG::e_renderPage FS_RENDERCONTENTFLAG::e_renderXXX} values 
+ *										and this should be one or a combination of these values.
  */
 -(void)setRenderContent: (unsigned int)renderContentFlag;
 /**
@@ -7580,6 +9788,24 @@ BOOL swigCMemOwn;
  */
 -(BOOL)importFromXML: (NSString *)path;
 
+/**
+ * @brief	Export the form data to a FDF/XFDF document.
+ *
+ * @param[in]	fdfDoc	A ::FSFDFDoc object which the form exports to.
+ *
+ * @return	<b>YES</b> means success, while <b>NO</b> means failure.
+ */
+-(BOOL)exportToFDFDoc: (FSFDFDoc*)fdfDoc;
+
+/**
+ * @brief	Import the form data from a FDF/XFDF document.
+ *
+ * @param[in]	fdfDoc	A ::FSFDFDoc object which the form imports from.
+ *
+ * @return	<b>YES</b> means success, while <b>NO</b> means failure.
+ */
+-(BOOL)importFromFDFDoc: (FSFDFDoc*)fdfDoc;
+
 /** @brief Free the object. */
 -(void)dealloc;
 
@@ -7666,6 +9892,13 @@ BOOL swigCMemOwn;
  *			If no form control can be found or there is any error, this function will return <b>nil</b>.
  */
 -(FSFormControl*)getControl: (FSPDFPage*)page index: (int)index;
+
+/**
+ * @brief	Reset data in the field to its default value.
+ *
+ * @return	<b>YES</b> means reseting operation is successful, while <b>NO</b> means failure.
+ */
+-(BOOL)reset;
 
 /** @brief Free the object. */
 -(void)dealloc;
@@ -7851,6 +10084,36 @@ BOOL swigCMemOwn;
 -(BOOL)tap: (FSPDFPage*)page point: (FSPointF*)point;
 
 /**
+ * @brief	Triggered when panning on the specified page.
+ *
+ * @param[in] page		The PDF page object.
+ * @param[in] point		The PDF point in PDF coordinate system.
+ *
+ * @return	 <b>YES</b> if successful, <b>NO</b> if failed.<br>
+ */
+-(BOOL)touchesBegan: (FSPDFPage*)page point: (FSPointF*)point;
+
+/**
+ * @brief	Triggered when panning on the specified page.
+ *
+ * @param[in] page		The PDF page object.
+ * @param[in] point		The PDF point in PDF coordinate system.
+ *
+ * @return	 <b>YES</b> if successful, <b>NO</b> if failed.<br>
+ */
+-(BOOL)touchesMoved: (FSPDFPage*)page point: (FSPointF*)point;
+
+/**
+ * @brief	Triggered when panning on the specified page.
+ *
+ * @param[in] page		The PDF page object.
+ * @param[in] point		The PDF point in PDF coordinate system.
+ *
+ * @return	 <b>YES</b> if successful, <b>NO</b> if failed.<br>
+ */
+-(BOOL)touchesEnded: (FSPDFPage*)page point: (FSPointF*)point;
+
+/**
  * @brief	Call this function when a character code is about to be inputted to a form field.
  *
  * @param[in] charCode	The character code, UTF-8 encoding.
@@ -7858,6 +10121,15 @@ BOOL swigCMemOwn;
  * @return	 <b>YES</b> if successful, <b>NO</b> if failed.<br>
  */
 -(BOOL)input: (unsigned int)charCode;
+
+/**
+ * @brief	Set focus on a form control. No focus if parameter <i>control</i> is <b>nil</b>
+ *
+ * @param[in]	control		The form control object.
+ *
+ * @return	<b>YES</b> means success, while <b>NO</b> means failure.
+ */
+-(BOOL)setFocus: (FSFormControl*)control;
 
 /**
  * @brief	Decide whether to highlight form fields or not.
@@ -8013,7 +10285,7 @@ enum FS_DIGEST_ALGORITHM {
     /** @brief	Signature digest algorithm: sha512 algorithm. */
     e_digestSHA512 = 3
 };
-    
+
 /**
  * @brief	Class to represent a signature.
  *
@@ -8076,8 +10348,10 @@ enum FS_DIGEST_ALGORITHM {
  *			It may take a long time to sign a signature, so Foxit PDF SDK uses a progressive process to do this.<br>
  * 			If the signing proecess is not finished, please call function {@link FSSignature::continueSign} to continue the signing process until it is finished.
  *
- * @param[in]	savePath		The path for saving the signing result. The signed document would be saved to another PDF file.
- * @param[in]	certPath		The pfx certificate file path, which will be used for signing. It should be in UTF-8 encoding. It should be a valid path.
+ * @param[in]	savePath		A full PDF file path for saving the signing result, including file name and extension. It should be in UTF-8 encoding.<br>
+ *								The signed document would be saved to another PDF file.
+ * @param[in]	certPath		A full path of a pfx certificate file (including file name and extension), which will be used for signing.
+ *								It should be in UTF-8 encoding. And it should be a valid path.
  * @param[in]	certPassword	The password string, used to open the cert file. If this is <b>nil</b> or empty, that means no password is required.
  *								It should be valid if parameter <i>passwordLen</i> is above 0.
  * @param[in]	digestAlgorithm	The algorithm of message digest for signed data. Please refer to {@link FS_DIGEST_ALGORITHM::e_digestSHA1 FS_DIGEST_ALGORITHM::e_digestXXX} values
@@ -8093,6 +10367,10 @@ enum FS_DIGEST_ALGORITHM {
  *			{@link FS_PROGRESSSTATE::e_progressError} means any error occurs.
  *
  * @note	When signing a signature successfully, user is strongly recommended to close current document and then open the signed PDF document to do following operation.
+ *
+ * @exception	e_errParam		Value of input parameter is invalid.
+ * @exception	e_errFormat		Any input UTF-8 string parameter is not in UTF-8 encoding.
+ * @exception	e_errUnknown	Any unknown error occurs.
  */
 -(enum FS_PROGRESSSTATE)startSign: (NSString *)savePath certPath: (NSString *)certPath certPassword: (NSString*)certPassword digestAlgorithm: (enum FS_DIGEST_ALGORITHM)digestAlgorithm pause: (FSPauseCallback*)pause clientData: (void*)clientData;
 
@@ -8135,6 +10413,42 @@ enum FS_DIGEST_ALGORITHM {
  *			{@link FS_PROGRESSSTATE::e_progressError} means any error occurs.
  */
 -(enum FS_PROGRESSSTATE)continueVerify;
+
+/**
+ * @brief	Get certificate information.
+ *
+ * @details	This function is used for a signed signature.
+ *			Currently, this function only supports for iOS and android platform.
+ *
+ * @param[in]	key		Certificate key string, in UTF-8 encoding.
+ *						Currently it can be one of the following keys:<br>
+ *						<ul>
+ *						<li>"SerialNumber"</li>
+ *						<li>"Issuer"</li>
+ *						<li>"Subject"</li>
+ *						<li>"ValidPeriodFrom"</li>
+ *						<li>"ValidPeriodTo"</li>
+ *						</ul>
+ *
+ * @return	Certificate information string, in UTF-8 string.
+ *
+ * @note	For "ValidPeriodFrom" or "ValidPeriodTo" key, timezone value will not be computed in.
+ *
+ * @exception	e_errParam		Value of input parameter is invalid.
+ * @exception	e_errFormat		Any input UTF-8 string parameter is not in UTF-8 encoding.
+ */
+-(NSString *)getCertificateInfo: (NSString *)key;
+
+/**
+ * @brief	Get the byte ranges data, including 4 elements.
+ *
+ * @details	This function is used for a signed signature.
+ *			The array of byte ranges contains 4 elements. These 4 elements are always in pairs of offset-size values,
+ *			and is in such order: offset,size,offset,size.
+ *
+ * @return	An array which can contain 4 elements and is used to receives data of byte ranges.
+ */
+-(NSArray *)getByteRanges;
 
 /**
  * @brief	Get current state.
@@ -8239,8 +10553,14 @@ enum FS_DIGEST_ALGORITHM {
  *
  * @param[in]	key		Key name.
  *						Please refer to {@link FS_SIGNATUREKEYNAME::e_signatureKeyNameSigner FS_SIGNATUREKEYNAME::e_signatureKeyNameXXX} values and it should be one of them.
- * @param[in]	value 	New string value, in UTF-8 encoding.
+ * @param[in]	value	New string value, in UTF-8 encoding.
  *						This should not be <b>nil</b> or empty, if parameter <i>key</i> is {@link FS_SIGNATUREKEYNAME::e_signatureKeyNameFilter}.
+ *
+ * @return	None.
+ *
+ * @exception	e_errParam		Value of input parameter is invalid.
+ * @exception	e_errFormat		Any input UTF-8 string parameter is not in UTF-8 encoding.
+ * @exception	e_errUnknown	Any unknown error occurs.
  */
 -(void)setKeyValue: (enum FS_SIGNATUREKEYNAME)key value: (NSString *)value;
 
@@ -8280,6 +10600,8 @@ enum FS_DIGEST_ALGORITHM {
  *
  * @param[in]	appearanceContent		Customized appearance content, in UTF-8 encoding.
  *										A sequence of drawing commands to be used for the appearance, for example "10 10 m 20 10 l S".
+ *
+ * @exception	e_errFormat		Any input UTF-8 string parameter is not in UTF-8 encoding.
  */
 -(void)setAppearanceContent: (NSString *)appearanceContent;
 
@@ -8287,7 +10609,416 @@ enum FS_DIGEST_ALGORITHM {
 -(void)dealloc;
 
 @end
+ 
+/**
+ * @brief	Enumeration for reflow Parser Flags.
+ *
+ * @details	Values of this enumeration can be used alone or in combination.
+ */
+enum FS_REFLOWFLAGS{
+    /** @brief	Reflow parsing flag for normal mode, without image. */
+    e_reflowNormal = 0x0,
+    /** @brief	Reflow parsing flag for image mode. */
+    e_reflowWithImage = 0x1,
+    /** @brief	Reflow parsing flag for single screen mode.
+    *  The flag can avoid that truncate problem the bottom of screen displaying the upper part of last text or image in single screen mode.
+    *	The truncate problem is related to the height by calling {@link FSReflowPage::startParse:} and
+    *	if it is not set this flag, the screen could display the upper part of text in the last line or image.
+    *	It can improve the effect when reading single screen mode, however, the scroll screen mode would be affected.
+    */
+    e_reflowNoTruncate = 0x2
+};
+    
+/**
+ * @brief		Class to definite for reflow related operation.<br>
+ *
+ * @details		This module contains following features:<br>
+ *				<ul>
+ *				<li>1. Reflow PDF page:
+ *					<ul>
+ *					<li>a. Create or release a page-reflow object, set page size and line space for a page-reflow object, and start reflowing in a progressive process.</li>
+ *					<li>b. PDF page-reflow is a common feature to display page contents in a small screen device. It re-lays out page contents.</li>
+ *					<li>c. Note: the progressive process of page-reflow should finish before rendering reflowed result or accessing its data.</li>
+ *					</ul>
+ *				</li>
+ *				<li>2. Render reflowed page:
+ *					<ul>
+ *					<li>a. Get content size of a reflowed page, get transformation matrix for a reflowed page, and render a reflowed page.</li>
+ *					<li>b. When a page is reflowed, its coordinates are different. Caller should get a new transformation matrix to display.</li>
+ *					</ul>
+ *				</li>
+ *				<li>3. Data of reflowed page:
+ *					<ul>
+ *					<li>a. Get focus data for a position, retrieve focus position from focus data, and get text page object.</li>
+ *					<li>b. In order to track a position in a reflowed page, Foxit PDF SDK uses a focus data to represent the position.
+ *						   Caller can store focus data or save the data to file so that the position can be retrieved later.
+ *						   Focus is similar to bookmark or destination in PDF, but it is simpler.<br></li>
+ *					</ul>
+ *				</li>
+ *				</ul>
+ *
+ * @see	FSRenderContext
+ * @see FSRenderer
+ * @see FSPDFPage
+ */
+@interface FSReflowPage : NSObject
+{
+    /** @brief SWIG proxy related property, it's deprecated to use it. */
+    void *swigCPtr;
+    /** @brief SWIG proxy related property, it's deprecated to use it. */
+    BOOL swigCMemOwn;
+}
+/** @brief SWIG proxy related function, it's deprecated to use it. */
+-(void*)getCptr;
+/** @brief SWIG proxy related function, it's deprecated to use it. */
+-(id)initWithCptr: (void*)cptr swigOwnCObject: (BOOL)ownCObject;
 
+/**
+ * @brief	Create a reflow page from a PDF page.
+ *
+ * @param[in]	pdfPage	A <b>FSPDFPage</b> object which is a PDF page object.
+ *
+ * @return	 A pointer to a <b>FSReflow</b> pointer to receive the new reflow page handle if successful.<br>
+ *			 Application should release this handle if not use it any more by calling function release.
+ *            If there is any error, this function will return <b>nil</b>.
+ *
+ */
++(FSReflowPage*)create: (FSPDFPage*)pdfPage;
+
+/**
+ * @brief	Set screen size before calling function {@link FSReflowPage::startParse:}. This is required.
+ *
+ * @param[in]	screenWidth			The screen width.
+ * @param[in]	screenHeight		The screen height.
+ *
+ * @return None.
+ */
+-(void)setScreenSize: (float)screenWidth screenHeight: (float)screenHeight;
+        
+/**
+ * @brief Set zoom factor before calling function {@link FSReflowPage::startParse:}.
+ *
+ * @details If no zoom factor has ever been set to current reflow page, Foxit PDF SDK will use value 100 as default zoom factor, which means 100%.
+ *			If new zoom factor is set, the new zoom factor will take effect until current reflow page has been re-parsed and rendered again.
+ *
+ * @param[in] zoom New zoom factor. The value represents the percent value, for example, 100 means 100%. It's must more than 25.
+ *
+ * @return None.
+ */
+-(void)setZoom: (int)zoom;
+        
+/**
+ * @brief	Set the Parsing flag before calling function {@link FSReflowPage::startParse:}.
+ *
+ * @param[in]	flags		Reflow parsing mode. It should be one of the following enumeration definitions. Default value: {@link FS_REFLOWFLAGS::e_reflowNormal}.
+ *							Please refer to {@link FS_REFLOWFLAGS::e_reflowNormal FS_REFLOWFLAGS::e_reflowXXXX} values and this should be one or a combination of these values.
+ *
+ * @return None.
+ */
+-(void)setParseFlags: (unsigned int)flags;
+        
+/**
+ * @brief	Set line space before calling function {@link FSReflowPage::startParse:}.
+ *
+ * @param[in]	lineSpace			The line space. Default value: 0.
+ *
+ */
+-(void)setLineSpace: (float)lineSpace;
+        
+/**
+ * @brief	Set the top space of page before calling function {@link FSReflowPage::startParse:}.
+ *
+ * @details	The function is used to set the distance between the page's top and the screen's top when to reflow a page.
+ *
+ * @param[in]	topSpace	The top space of page when to reflow and this value should be equal or greater than zero. Default value: 0.
+ */
+-(void)setTopSpace: (float)topSpace;
+        
+/**
+ * @brief	Start parsing process for a reflow page.
+ *
+ * @details	It may take a long time to parsing a reflow page, so Foxit PDF SDK uses a progressive process to do this.<br>
+ *			All the resources about reflow page will be loaded after the reflow page is parsed.<br>
+ *			And this function should be called before any getting reflow method can be used.
+ *
+ * @param[in]	pause	Pause object which decides if the parsing process needs to be paused.
+ *						This can be <b>nil</b> which means not to pause during the parsing process.
+ *						If this is not <b>nil</b>, it should be a valid pause object implemented by user.
+ *
+ * @return	{@link FS_PROGRESSSTATE::e_progressFinished} means the paring is finished successfully or the page has already been parsed.<br>
+ *			{@link FS_PROGRESSSTATE::e_progressToBeContinued} means the paring process is not finished yet.
+ *			{@link FS_PROGRESSSTATE::e_progressError} means any error occurs.
+ *
+ */
+-(enum FS_PROGRESSSTATE)startParse: (FSPauseCallback*)pause;
+
+/**
+ * @brief	Continue to parse a reflow page if the parsing process has not been finished yet.
+ *
+ * @return	{@link FS_PROGRESSSTATE::e_progressFinished} means the paring is finished successfully or the reflow page has already been parsed.<br>
+ *			{@link FS_PROGRESSSTATE::e_progressToBeContinued} means the paring process is not finished yet and function FSPDFPage::continueParse() should be called to continue the process.
+ *			{@link FS_PROGRESSSTATE::e_progressError} means any error occurs.
+ */
+-(enum FS_PROGRESSSTATE)continueParse;
+        
+/**
+ * @brief	Get width of a reflow page after calling function {@link FSReflowPage::startParse:}.
+ *
+ * @return	a float that receives the width of reflow page.
+ *			If any error occurs, -1 will be returned.
+ */
+-(float)getContentWidth;
+        
+/**
+ * @brief	Get height of a reflow page after calling function {@link FSReflowPage::startParse:}.
+ *
+ * @return	a float that receives the height of reflow page.
+ *			If any error occurs, -1 will be returned.
+ */
+-(float)getContentHeight;
+        
+/**
+ * @brief	Get the display matrix, according to the offset of top side between current reflow page and screen.
+ *
+ * @param[in]	offsetX				Offset value, which means the offset from top side of current reflow page to the top side of screen.
+ * @param[in]	offsetY				Offset value, which means the offset from left side of current reflow page to the left side of screen.
+ *
+ * @return	The display matrix.
+ *			If there is any error, a ::FSMatrix with all values 0 will be returned.
+ */
+-(FSMatrix*)getDisplayMatrix: (float)offsetX offsetY: (float)offsetY;
+        
+/**
+ * @brief	Get focus data corresponding to a given position in device coordinate system.
+ *
+ * @details	Focus data of a specific content is fixed, and will not change because of different sizes of reflow pages,
+ *			which are retrieved from the same PDF page of the same content.
+ *			So focus data can be used to locate the same content of a PDF page in reflow pages with different sizes but same reflow content.
+ *
+ * @param[in]	matrix				Pointer to a ::FSMatrix structure returned by function {@link FSPDFObject::getMatrix}.
+ * @param[in]	point				Focuse point of a specific position, in device coordinate system.
+ *
+ * @return	The focus data.
+ *			If there is any error, this function will return empty string.
+ */
+-(NSString*)getFocusData: (FSMatrix*)matrix point: (FSPointF*)point;
+        
+/**
+ * @brief	Get a point of a position in device coordinate system corresponding to a given focus data.
+ *
+ * @details	Focus data of a specific content is fixed, and will not change because of different sizes of reflow pages,
+ *			which are retrieved from same PDF page and with same content.
+ *			So focus data can be used to locate the same content of a PDF page in reflow pages with different sizes but same reflow content.
+ *
+ * @param[in]	matrix				Pointer to a FSMatrix structure returned by function {@link FSPDFObject::getMatrix}.
+ * @param[in]	focusData			Focus data used to get its corresponding position in device coordinate system, with specific matrix. 
+ *									This is returned by function {@link FSReflowPage::getFocusData:point:}.
+ *
+ * @return	A FSPointF point that receives x-coordinate and y-coordinate of a position. 
+ *			This position is just corresponding to given focus data in device coordinate system.		
+ */
+-(FSPointF*)getFocusPosition: (FSMatrix*)matrix focusData: (NSString*)focusData;
+        
+/**
+ * @brief	Check if current reflow page has been parsed or not.
+ *
+ * @return	<b>YES</b> means current reflow page has been parsed, while <b>NO</b> means current page has not been parsed yet.
+ */
+-(BOOL)isParsed;
+
+/** @brief Free the object. */
+-(void)dealloc;
+
+@end
+    
+/**
+ * @brief	Class to access a FSPSInk annotation.
+ *
+ * @details Created by {@link FSPSI::convertToPDFAnnot:rect:rotate:}, FSPSInk is not a standard annotation so can't be add to page by FSPDFPage::addAnnot.
+ */
+@interface FSPSInk:  FSAnnot
+/** @brief SWIG proxy related function, it's deprecated to use it. */
+-(void*)getCptr;
+/** @brief SWIG proxy related function, it's deprecated to use it. */
+-(id)initWithCptr: (void*)cptr swigOwnCObject: (BOOL)ownCObject;
+/**
+ * @brief	Reset appearance stream.
+ *
+ * @return	<b>YES</b> means success, while <b>NO</b> means failure.
+ */
+-(BOOL)resetAppearanceStream;
+/** @brief Free the object. */
+-(void)dealloc;
+
+@end
+    
+@class FSPSI;
+
+    
+/**
+ * @brief	Class to represents a callback object for refreshing a region for PSI.
+ *
+ * @details	All the pure virtual functions in this class are used as callback functions and should be implemented by user.
+ *			An implemented ::FSPSICallback object can be set to a PSI object by function {@link FSPSI::setCallback:}.
+ */
+@interface FSPSICallback : NSObject
+{
+    /** @brief SWIG proxy related property, it's deprecated to use it. */
+    void *swigCPtr;
+    /** @brief SWIG proxy related property, it's deprecated to use it. */
+    BOOL swigCMemOwn;
+}
+/** @brief SWIG proxy related function, it's deprecated to use it. */
+-(void*)getCptr;
+/** @brief SWIG proxy related function, it's deprecated to use it. */
+-(id)initWithCptr: (void*)cptr swigOwnCObject: (BOOL)ownCObject;
+
+/**
+ * @brief   A callback function used to flush the content on PSI canvas.
+ *
+ * @details It woull flush rectangle region and should be implemented by user.
+ *
+ * @param[in]   PSIHandle   Pointer to a ::FSPSI object.
+ * @param[in]   flushRect   Rectangle of the flush region.
+ *
+ * @return  None.
+ */
+-(void)refresh:(FSPSI*)PSIHandle Rect:(FSRectF*)flushRect;
+
+@end
+    
+/**
+ * @brief	Class to access PSI operation.
+ *
+ * @details	PSI, "pressure sensitive ink", is used for handwriting signature especially, and usually works together with a handwriting board or for a touchscreen.
+ *			PSI contains private coordinates, and a canvas is created in its coordinates. Canvas limits operating area and generates appearance of PSI.<br>
+ *			PSI is independent of PDF, can be even used directly in the device screen. If user wants to save a PSI object to PDF file, please call function {@link FSPSI::convertToPDFAnnot:rect:rotate:}.
+ *			This function will convert PSI data to a PSInk annotation (as a Foxit custom annotation type) and insert the PSInk annotation to the specified position in a PDF page.
+ *
+ * @see	FSPSInk
+ */
+@interface FSPSI : NSObject
+{
+    /** @brief SWIG proxy related property, it's deprecated to use it. */
+    void *swigCPtr;
+    /** @brief SWIG proxy related property, it's deprecated to use it. */
+    BOOL swigCMemOwn;
+}
+/** @brief SWIG proxy related function, it's deprecated to use it. */
+-(void*)getCptr;
+/** @brief SWIG proxy related function, it's deprecated to use it. */
+-(id)initWithCptr: (void*)cptr swigOwnCObject: (BOOL)ownCObject;
+
+/**
+ * @brief   Create a psi object.
+ *
+ * @param[in]   bitmap      A bitmap used for rendering. It must be created with {@link FS_DIBFORMAT::e_dibArgb} format.
+ * @param[in]   simulate    Turn on/off simulation of Pressure Sensitive Ink:
+ *                          <b>YES</b> means to turn on simulation, and <b>NO</b> means to turn off simulation.<br>
+ *                          It can simulate handwriting weights by writing speed when simulation is on.
+ *
+ * @return  A new psi object.
+ */
++(FSPSI*)create: (FSBitmap*)bitmap simulate: (BOOL)simulate;
+        
+/**
+ * @brief   Create a psi object.
+ *
+ * @param[in]   width       Width of pressure sensitive ink canvas in device coordinate system. This shall be greater than 0.
+ * @param[in]   height      Height of pressure sensitive ink canvas in device coordinate system. This shall be greater than 0.
+ * @param[in]   simulate    Turn on/off simulation of Pressure Sensitive Ink:
+ *                          <b>YES</b> means to turn on simulation, and <b>NO</b> means to turn off simulation.<br>
+ *                          It can simulate handwriting weights by writing speed when simulation is on.
+ *
+ * @return  A new psi object.
+ */
++(FSPSI*)create: (int)width height: (int)height simulate: (BOOL)simulate;
+
+/**
+ * @brief   A callback function used to flush region
+ *
+ * @param[in]   callback           Function pointer of a callback function as flush.
+ *
+ * @return None.
+ */
+
+-(void)setCallback: (FSPSICallback*)callback;
+        
+/**
+ * @brief   Set ink color of a pressure sensitive ink object.
+ *
+ * @param[in]   color       Ink color. Format: 0xAARRGGBB. default value: 0xFF000000.
+ *                          Alpha value is ignored and will always be treated as 0xFF internally.
+ *
+ * @return None.
+ */
+-(void)setColor: (unsigned int)color;
+        
+/**
+ * @brief   Set ink diameter of a pressure sensitive ink object.
+ *
+ * @param[in]   diameter        Ink diameter. This shall be bigger than 1. default value: 1.
+ *
+ * @return None.
+ */
+-(void)setDiameter: (int)diameter;
+        
+/**
+ * @brief   Set ink opacity of a pressure sensitive ink object.
+ *
+ * @param[in]   opacity         Ink opacity. Valid range: from 0.0 to 1.0. default value: 1.0.
+ *
+ * @return None.
+ */
+-(void)setOpacity: (float)opacity;
+        
+/**
+ * @brief   Add a point to a pressure sensitive ink object.
+ *
+ * @param[in]   point           The value of point in canvas coordinate.
+ * @param[in]   ptType          Point type. Please refer to {@link FS_PSIPTTYPE::e_pointTypeMoveTo FS_PSIPTTYPE::e_pointTypeXXXX} and this should be one of them.
+ * @param[in]   pressure        Pressure value of current point, between 0 and 1.
+ *
+ * @return None.
+ */
+-(void)addPoint: (FSPointF*)point ptType: (enum FS_PATHPOINTTYPE)ptType pressure: (float)pressure;
+        
+/**
+ * @brief   Get contents rectangle on the canvas.
+ *
+ * @return  A ::FSRectF object that receives the pressure sensitive ink object in device coordinate.
+ *          If there is any error, a ::FSRectF object with all 0 values would be returned.
+ */
+-(FSRectF*)getContentsRect;
+        
+/**
+ * @brief   Get the canvas bitmap.
+ *
+ * @return  A PDF::FSBitmap class that receives the canvas bitmap.
+ */
+-(FSBitmap*)getBitmap;
+        
+/**
+ * @brief   Convert a pressure sensitive ink object to a PDF annotation.
+ *
+ * @details Currently only the path data will be converted to the psi annoation, the weight info of each dots will be lost.
+ *
+ * @param[in]   pdfPage         A PDF page object.
+ * @param[in]   rect       New rectangle to specify the new position where current annotation is to be moved to.
+ *                              It should be valid in PDF coordinate system.
+ * @param[in]   rotate          Rotation value.
+ *                              Please refer to {@link FS_ROTATION::e_rotation0 FS_ROTATION::e_rotationXXX} values and this would be one of these values.
+ *
+ * @return  A ::FSPSInk object.
+ *          If there is any error, this function will return <b>nil</b>.
+ */
+-(FSPSInk*)convertToPDFAnnot: (FSPDFPage*)pdfPage rect: (FSRectF*)rect rotate: (enum FS_ROTATION)rotate;
+
+/** @brief Free the object. */
+-(void)dealloc;
+        
+@end
+    
 #ifdef __cplusplus
 }
 #endif

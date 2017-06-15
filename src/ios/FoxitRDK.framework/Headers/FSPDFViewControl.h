@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2003-2016, Foxit Software Inc..
+ * Copyright (C) 2003-2017, Foxit Software Inc..
  * All Rights Reserved.
  *
  * http://www.foxitsoftware.com
@@ -47,6 +47,20 @@ typedef enum
 } PDF_LAYOUT_MODE;
 
 /**
+ * @brief	Enumeration for page reflow mode.
+ *
+ * @details	Values of this enumeration should be used alone.
+ */
+typedef enum {
+    /** @brief	No reflow. */
+    PDF_REFLOW_NONE = -1,
+    /** @brief Reflow both text and image on PDF page. */
+    PDF_REFLOW_WITHIMAGE = 0,
+    /** @brief Reflow just text on PDF page. */
+    PDF_REFLOW_ONLYTEXT
+} PDF_REFLOW_REFLOWMODE;
+
+/**
  * @brief	Enumeration for PDF display zoom mode.
  * 
  * @details	Values of this enumeration should be used alone.
@@ -68,14 +82,10 @@ typedef enum
 @optional
 /** 
  * @brief	Triggered before recovering the view control.
- *
- * @return	None.
  */
 - (void)onWillRecover;
 /** 
  * @brief	Triggered after the view control has recovered from running out of memory.
- *
- * @return	None.
  */
 - (void)onRecovered;
 @end
@@ -88,8 +98,6 @@ typedef enum
  *
  * @param[in]	toInterfaceOrientation      The UI interface orientation.
  * @param[in]	duration                    The Time duration.
- *
- * @return	None.
  */
 - (void)willRotateToInterfaceOrientation:(UIInterfaceOrientation)toInterfaceOrientation duration:(NSTimeInterval)duration;
 /** 
@@ -97,16 +105,12 @@ typedef enum
  *
  * @param[in]	toInterfaceOrientation      The UI interface orientation.
  * @param[in]	duration                    The Time duration.
- *
- * @return	None.
  */
 - (void)willAnimateRotationToInterfaceOrientation:(UIInterfaceOrientation)toInterfaceOrientation duration:(NSTimeInterval)duration;
 /** 
  * @brief	Triggered after rotation is done.
  *
  * @param[in]	fromInterfaceOrientation    The UI interface orientation.
- *
- * @return	None.
  */
 - (void)didRotateFromInterfaceOrientation:(UIInterfaceOrientation)fromInterfaceOrientation;
 @end
@@ -115,9 +119,7 @@ typedef enum
 @protocol IDocEventListener <NSObject>
 @optional
 /** 
- * @brief	Triggered when the document will be opened. 
- *
- * @return	None.
+ * @brief	Triggered when the document will be opened.
  */
 - (void)onDocWillOpen;
 /** 
@@ -125,16 +127,12 @@ typedef enum
  *
  * @param[in]	document	PDF document instance which is opened.
  * @param[in]	error		Error code. Please refer to {@link FS_ERRORCODE::e_errSuccess FS_ERRORCODE::e_errXXX} values and it should be one of these values.
- *
- * @return	None.
  */
 - (void)onDocOpened:(FSPDFDoc* )document error:(int)error;
 /** 
  * @brief	Triggered when the document will be closed. 
  *
  * @param[in]	document	PDF document instance which will be closed.
- *
- * @return	None.
  */
 - (void)onDocWillClose:(FSPDFDoc* )document;
 /** 
@@ -142,16 +140,12 @@ typedef enum
  *
  * @param[in]	document	PDF document instance which is closed.
  * @param[in]	error		Error code. Please refer to {@link FS_ERRORCODE::e_errSuccess FS_ERRORCODE::e_errXXX} values and it should be one of these values.
- *
- * @return	None.
  */
 - (void)onDocClosed:(FSPDFDoc* )document error:(int)error;
 /** 
  * @brief	Triggered when the document will be saved. 
  *
  * @param[in]	document	PDF document instance which will be saved.
- *
- * @return	None.
  */
 - (void)onDocWillSave:(FSPDFDoc* )document;
 /** 
@@ -159,10 +153,9 @@ typedef enum
  *
  * @param[in]	document	PDF document instance which is saved.
  * @param[in]	error		Error code. Please refer to {@link FS_ERRORCODE::e_errSuccess FS_ERRORCODE::e_errXXX} values and it should be one of these values.
- *
- * @return	None.
  */
 - (void)onDocSaved:(FSPDFDoc* )document error:(int)error;
+
 @end
 
 /** @brief	The page event listener. */
@@ -175,8 +168,6 @@ typedef enum
  *								<i>count</i> is the page count.
  * @param[in]	currentIndex	Current page index. Valid range: from 0 to (<i>count</i>-1).
  *								<i>count</i> is the page count.
- *
- * @return	None.
  */
 - (void)onPageChanged:(int)oldIndex currentIndex:(int)currentIndex;
 /** 
@@ -184,8 +175,6 @@ typedef enum
  *
  * @param[in]	index		Page index. Valid range: from 0 to (<i>count</i>-1).
  *							<i>count</i> is the page count.
- *
- * @return	None.
  */
 - (void)onPageVisible:(int)index;
 /** 
@@ -193,16 +182,59 @@ typedef enum
  *
  * @param[in]	index		Page index. Valid range: from 0 to (<i>count</i>-1).
  *							<i>count</i> is the page count.
- *
- * @return	None.
  */
 - (void)onPageInvisible:(int)index;
 /** 
  * @brief	Triggered by the page navigation or link jump.
- *
- * @return	None.
  */
 - (void)onPageJumped;
+/**
+ * @brief	Triggered when pages will be removed.
+ *
+ * @param[in]	indexes		Page index array. Valid range of page index: from 0 to (<i>count</i>-1).
+ *							<i>count</i> is the page count.
+ */
+- (void)onPagesWillRemove:(NSArray<NSNumber*>*)indexes;
+/**
+ * @brief	Triggered when pages will be moved to a new index.
+ *
+ * @param[in]	indexes		Page index array. Valid range of page index: from 0 to (<i>count</i>-1).
+ *							<i>count</i> is the page count.
+ * @param[in]	dstIndex	The dest page index, which the pages will be moved after.
+ */
+- (void)onPagesWillMove:(NSArray<NSNumber*>*)indexes dstIndex:(int)dstIndex;
+/**
+ * @brief	Triggered when pages will be rotated.
+ *
+ * @param[in]	indexes		Page index array. Valid range of page index: from 0 to (<i>count</i>-1).
+ *							<i>count</i> is the page count.
+ * @param[in]   rotation    The page rotation, valid value will be 0(0 degree), 1(90 degree), 2(180 degree), 3(270 degree).
+ */
+- (void)onPagesWillRotate:(NSArray<NSNumber*>*)indexes rotation:(int)rotation;
+/**
+ * @brief	Triggered when pages were removed.
+ *
+ * @param[in]	indexes		Page index array. Valid range of page index: from 0 to (<i>count</i>-1).
+ *							<i>count</i> is the page count.
+ */
+- (void)onPagesRemoved:(NSArray<NSNumber*>*)indexes;
+/**
+ * @brief	Triggered when pages were moved to a new index.
+ *
+ * @param[in]	indexes		Page index array. Valid range of page index: from 0 to (<i>count</i>-1).
+ *							<i>count</i> is the page count.
+ * @param[in]	dstIndex	The dest page index, which the pages will be moved after.
+ */
+- (void)onPagesMoved:(NSArray<NSNumber*>*)indexes dstIndex:(int)dstIndex;
+/**
+ * @brief	Triggered when pages were rotated.
+ *
+ * @param[in]	indexes		Page index array. Valid range of page index: from 0 to (<i>count</i>-1).
+ *							<i>count</i> is the page count.
+ * @param[in]   rotation    The page rotation, valid value will be 0(0 degree), 1(90 degree), 2(180 degree), 3(270 degree).
+ */
+- (void)onPagesRotated:(NSArray<NSNumber*>*)indexes rotation:(int)rotation;
+
 @end
 
 /** @brief	The page layout event listener. */
@@ -215,8 +247,6 @@ typedef enum
  *									Please refer to {@link PDF_LAYOUT_MODE::PDF_LAYOUT_MODE_UNKNOWN PDF_LAYOUT_MODE::PDF_LAYOUT_MODE_XXX} values and this should be one of these values.
  * @param[in]	newLayoutMode		New layout mode. 
  *									Please refer to {@link PDF_LAYOUT_MODE::PDF_LAYOUT_MODE_UNKNOWN PDF_LAYOUT_MODE::PDF_LAYOUT_MODE_XXX} values and this should be one of these values.
- *
- * @return	None.
  */
 -(void)onLayoutModeChanged:(PDF_LAYOUT_MODE)oldLayoutMode newLayoutMode:(PDF_LAYOUT_MODE)newLayoutMode;
 @end
@@ -228,24 +258,18 @@ typedef enum
  * @brief	Triggered when any offset changes.
  *
  * @param[in]	scrollView      The scroll view that displays PDF pages.
- *
- * @return	None.
  */
 - (void)onScrollViewDidScroll:(UIScrollView *)scrollView;
 /** 
  * @brief	Triggered when any zoom scale changes.
  *
  * @param[in]	scrollView      The scroll view that displays PDF pages.
- *
- * @return	None.
  */
 - (void)onScrollViewDidZoom:(UIScrollView *)scrollView;
 /** 
  * @brief	Triggered when called on start of dragging (may require some time or distance to move).
  *
  * @param[in]	scrollView      The scroll view that displays PDF pages.
- *
- * @return	None.
  */
 - (void)onScrollViewWillBeginDragging:(UIScrollView *)scrollView;
 /** 
@@ -253,40 +277,30 @@ typedef enum
  *
  * @param[in]	scrollView      The scroll view that displays PDF pages.
  * @param[in]	decelerate      <b>YES</b> means it will continue moving afterwards, while <b>NO</b> means not.
- *
- * @return	None.
  */
 - (void)onScrollViewDidEndDragging:(UIScrollView *)scrollView willDecelerate:(BOOL)decelerate;
 /** 
  * @brief	Triggered when called on finger up as we are moving.
  *
  * @param[in]	scrollView      The scroll view that displays PDF pages.
- *
- * @return	None.
  */
 - (void)onScrollViewWillBeginDecelerating:(UIScrollView *)scrollView;
 /** 
  * @brief	Triggered when called when scroll view grinds to a halt.
  *
  * @param[in]	scrollView      The scroll view that displays PDF pages.
- *
- * @return	None.
  */
 - (void)onScrollViewDidEndDecelerating:(UIScrollView *)scrollView;
 /** 
  * @brief	Triggered when called before the scroll view begins zooming its content.
  *
  * @param[in]	scrollView      The scroll view that displays PDF pages.
- *
- * @return	None.
  */
 - (void)onScrollViewWillBeginZooming:(UIScrollView *)scrollView;
 /** 
  * @brief	Triggered when scale between minimum and maximum. called after any "bounce" animations.
  *
  * @param[in]	scrollView      The scroll view that displays PDF pages.
- *
- * @return	None.
  */
 - (void)onScrollViewDidEndZooming:(UIScrollView *)scrollView;
 @end
@@ -341,8 +355,6 @@ typedef enum
  * @param[in]	pageIndex	Index of the specified page. Valid range: from 0 to (<i>count</i>-1).
  *							<i>count</i> is the page count.
  * @param[in]	context     The CGContext object.
- *
- * @return	None.
  */
 - (void)onDraw:(int)pageIndex inContext:(CGContextRef)context;
 @end
@@ -396,7 +408,7 @@ typedef enum
 @protocol FSPDFUIExtensionsManager <IGestureEventListener, IDrawEventListener, ITouchEventListener>
 @optional
 /**
- * @brief	Whether to draw the annotation.
+ * @brief	Whether the view control should draw this annotation or not.
  *
  * @param[in]	annot     An annotation.
  *
@@ -439,7 +451,7 @@ typedef enum
 /** 
  * @brief	Initialize the view control.
  *
- * @param[in]	frame	
+ * @param[in]	frame	.
  *
  * @return	The view control instance.
  */
@@ -450,32 +462,24 @@ typedef enum
  * @brief	Register a document event listener.
  *
  * @param[in]	listener	A document event listener to be registered.
- *
- * @return	None.
  */
 - (void)registerDocEventListener:(id<IDocEventListener>)listener;
 /** 
  * @brief	Register a page event listener.
  *
  * @param[in]	listener	A page event listener to be registered.
- *
- * @return	None.
  */
 - (void)registerPageEventListener:(id<IPageEventListener>)listener;
 /** 
  * @brief	Register an event listener for scrolling page views.
  *
  * @param[in]	listener	An event listener for scrolling page views to be registered.
- *
- * @return	None.
  */
 - (void)registerScrollViewEventListener:(id<IScrollViewEventListener>)listener;
 /** 
  * @brief	Register an event listener for page layout.
  *
  * @param[in]	listener	An event listener for page layout to be registered.
- *
- * @return	None.
  */
 - (void)registerLayoutChangedEventListener:(id<ILayoutEventListener>)listener;
 /** 
@@ -484,80 +488,60 @@ typedef enum
  * @details	If method implementation of protocol returns <b>YES</b>, then the next listener will not receive the method call. 
  *
  * @param[in]	listener	An event listener for gesture to be registered.
- *
- * @return	None.
  */
 - (void)registerGestureEventListener:(id<IGestureEventListener>)listener;
 /** 
  * @brief	Register an event listener for drawing page.
  *
  * @param[in]	listener	An event listener for drawing page to be registered.
- *
- * @return	None.
  */
 - (void)registerDrawEventListener:(id<IDrawEventListener>)listener;
 /** 
  * @brief	Register an event listener for recovery from running out of memory.
  *
  * @param[in]	listener	An event listener for recovery from running out of memory to be registered.
- *
- * @return	None.
  */
 - (void)registerRecoveryEventListener:(id<IRecoveryEventListener>)listener;
 /** 
  * @brief	Unregister an event listener for recovery from running out of memory.
  *
  * @param[in]	listener	An event listener for recovery from running out of memory to be unregistered.
- *
- * @return	None.
  */
 - (void)unregisteRecoveryEventListener:(id<IRecoveryEventListener>)listener;
 /** 
  * @brief	Unregister an event listener for drawing page.
  *
  * @param[in]	listener	An event listener for drawing page to be unregistered.
- *
- * @return	None.
  */
 - (void)unregisterDrawEventListener:(id<IDrawEventListener>)listener;
 /** 
  * @brief	Unregister an event listener for gesture.
  *
  * @param[in]	listener	An event listener for gesture to be unregistered.
- *
- * @return	None.
  */
 - (void)unregisterGestureEventListener:(id<IGestureEventListener>)listener;
 /** 
  * @brief	Unregister a document event listener.
  *
  * @param[in]	listener	A document event listener to be unregistered.
- *
- * @return	None.
  */
 - (void)unregisterDocEventListener:(id<IDocEventListener>)listener;
 /** 
  * @brief	Unregister a page event listener.
  *
  * @param[in]	listener	A page event listener to be unregistered.
- *
- * @return	None.
  */
 - (void)unregisterPageEventListener:(id<IPageEventListener>)listener;
 /** 
  * @brief	Unregister an event listener for scrolling page views.
  *
  * @param[in]	listener	An event listener for scrolling page views to be unregistered.
- *
- * @return	None.
  */
 - (void)unregisterScrollViewEventListener:(id<IScrollViewEventListener>)listener;
 /** 
  * @brief	Unregister an event listener for page layout.
  *
  * @param[in]	listener	An event listener for page layout to be unregistered.
- *
- * @return	None.
  */
 - (void)unregisterLayoutChangedEventListener:(id<ILayoutEventListener>)listener;
 
@@ -566,8 +550,6 @@ typedef enum
  * @brief	Set the PDF document object to view control, then open the document.
  *
  * @param[in]	doc		A PDF document object.
- *
- * @return	None.
  */
 - (void)setDoc:(FSPDFDoc*)doc;
 /** 
@@ -583,8 +565,6 @@ typedef enum
  * @param[in]	password	The password string, used to load the PDF document content. It can be either user password or owner password.
  *							Set it to <b>nil</b> if the password is unknown.
  * @param[in]   completion  The callback will be called when current document object becomes available or the view control fail to open the document.
- *
- * @return	None.
  */
 - (void)openDoc:(NSString*)filePath password:(NSString*)password completion:(void(^)(enum FS_ERRORCODE error))completion;
 /** 
@@ -594,16 +574,12 @@ typedef enum
  * @param[in]	password	The password string, used to load the PDF document content. It can be either user password or owner password.
  *							Set it to <b>nil</b> if the password is unknown.
  * @param[in]   completion  The callback will be called when document becomes available or fail to open the document.
- *
- * @return	None.
  */
 - (void)openDocFromMemory:(NSData *)buffer password:(NSString*)password completion:(void(^)(enum FS_ERRORCODE error))completion;
 /** 
  * @brief	Close the document.
  *
  * @param[in]	cleanup		A callback function to clean up caller managed resources.
- *
- * @return	None.
  */
 - (void)closeDoc:(void (^)())cleanup;
 /** 
@@ -749,7 +725,6 @@ typedef enum
  *
  * @param[in]	animated		<b>YES</b> means to use animation effects.
  *								<b>NO</b> means not to use animation effects.
- * @return	None.
  */
 - (void)gotoPrevView:(BOOL)animated;
 /** 
@@ -757,13 +732,28 @@ typedef enum
  *
  * @param[in]	animated		<b>YES</b> means to use animation effects.
  *								<b>NO</b> means not to use animation effects.
- * @return	None,
  */
 - (void)gotoNextView:(BOOL)animated;
 
+#pragma mark - Reflow
+
+/**
+ * @brief	Get reflow mode.
+ *
+ * @return	Reflow mode. PDF_REFLOW_NONE if the current view mode is not reflow.
+ */
+- (PDF_REFLOW_REFLOWMODE)getReflowMode;
+/**
+ * @brief	Set reflow mode.
+ *
+ * @param[in]	reflowMode	reflow mode.
+ */
+- (void)setReflowMode:(PDF_REFLOW_REFLOWMODE)reflowMode;
+
+
 #pragma mark - Zoom
 /** 
- * @brief	Get the zoom level.Valid range: from 1.0 to 10.0.
+ * @brief	Get the zoom level. Valid range: from 1.0 to 5.0 for reflow mode, others 1.0 to 10.0.
  *
  * @return	Zoom level.
  */
@@ -771,9 +761,7 @@ typedef enum
 /** 
  * @brief	Set the zoom level.
  *
- * @param[in]	zoom	New zoom level.Valid range: from 1.0 to 10.0.
- *
- * @return	None.
+ * @param[in]	zoom	New zoom level.Valid range: from 1.0 to 5.0 for reflow mode, others 1.0 to 10.0.
  */
 - (void)setZoom:(float)zoom;
 /** 
@@ -781,16 +769,12 @@ typedef enum
  *
  * @param[in]	zoom	New zoom level.
  * @param[in]	origin	A specified position, in display view space.
- *
- * @return	None.
  */
 - (void)setZoom:(float)zoom origin:(CGPoint)origin;
 /** 
  * @brief	Set the zoom mode.
  *
  * @param[in]	zoomMode	New zoom mode.
- *
- * @return	None.
  */
 - (void)setZoomMode:(PDF_DISPLAY_ZOOMMODE)zoomMode;
 
@@ -808,8 +792,6 @@ typedef enum
  * @param[in]	mode	Page layout mode.
  *						Please refer to {@link PDF_LAYOUT_MODE::PDF_LAYOUT_MODE_UNKNOWN PDF_LAYOUT_MODE::PDF_LAYOUT_MODE_XXX} values and it should be one of these values. 
  *						{@link PDF_LAYOUT_MODE::PDF_LAYOUT_MODE_UNKNOWN} will not work.
- *
- * @return	None.
  */
 - (void)setPageLayoutMode:(PDF_LAYOUT_MODE)mode;
 
@@ -818,8 +800,6 @@ typedef enum
  * @brief	Set background color of viewer.
  *
  * @param[in]	color		New background color.
- *
- * @return	None.
  */
 - (void)setBackgroundColor:(UIColor*)color;
 
@@ -842,8 +822,6 @@ typedef enum
  * @param[in]	pos         New horizontal scroll position.
  * @param[in]	animated	<b>YES</b> means to use animation effects.
  *							<b>NO</b> means not to use animation effects.
- *
- * @return	None.
  */
 - (void)setHScrollPos: (double)pos animated:(BOOL)animated;
 /** 
@@ -852,8 +830,6 @@ typedef enum
  * @param[in]	pos         New vertical scroll position.
  * @param[in]	animated	<b>YES</b> means to use animation effects.
  *							<b>NO</b> means not to use animation effects.
- *
- * @return	None.
  */
 - (void)setVScrollPos: (double)pos animated:(BOOL)animated;
 /** 
@@ -933,6 +909,17 @@ typedef enum
  * @return	The overlay UI view.
  */
 - (UIView*)getOverlayView:(int)pageIndex;
+
+/**
+ * @brief	Append a customized UI view to pdf page views.
+ *
+ * @details	User-defined view is appended as the new last page view. User events and interactions of the appended view is handled by themself.
+            The pdf file is not changed. This method can be called multi-times.
+ *
+ * @param[in]	pageView	User-defined view to be appended as the last page view. 
+                            It CAN'T be subview of FSPDFViewControl, that is, it's invalid to append a view returned by getPageView getOverlayView or getDisplayView.
+ */
+- (void)appendPageView:(UIView*)pageView;
 
 #pragma mark - Coordinate Conversion
 /** 
@@ -1041,8 +1028,6 @@ typedef enum
  * @param[in]	rect        The rectangle are on page, in page view coordinate.
  * @param[in]	pageIndex	Page index.Valid range: from 0 to (<i>count</i>-1).
  *							<i>count</i> is the page count.
- *
- * @return	None.
  */
 - (void)refresh:(CGRect)rect pageIndex:(int)pageIndex;
 /**
@@ -1052,8 +1037,6 @@ typedef enum
  * @param[in]	pageIndex	Page index.Valid range: from 0 to (<i>count</i>-1).
  *							<i>count</i> is the page count.
  * @param[in]   needRender  If YES, will render the specified PDF page, then refresh the overlay view; if NO, will refresh the overlay view only.
- *
- * @return	None.
  */
 - (void)refresh:(CGRect)rect pageIndex:(int)pageIndex needRender:(BOOL)needRender;
 /** 
@@ -1062,7 +1045,6 @@ typedef enum
  * @param[in]	pageIndex	Page index.Valid range: from 0 to (<i>count</i>-1).
  *							<i>count</i> is the page count.
  *
- * @return	None.
  */
 - (void)refresh:(int)pageIndex;
 /**
@@ -1071,14 +1053,10 @@ typedef enum
  * @param[in]	pageIndex	Page index.Valid range: from 0 to (<i>count</i>-1).
  *							<i>count</i> is the page count.
  * @param[in]   needRender  If YES, will render the specified PDF page, then refresh the overlay view; if NO, will refresh the overlay view only.
- *
- * @return	None.
  */
 - (void)refresh:(int)pageIndex needRender:(BOOL)needRender;
 /** 
  * @brief	Refresh the display view.
- *
- * @return	None.
  */
 - (void)refresh;
 
@@ -1088,8 +1066,6 @@ typedef enum
  * @details	Foxit PDF SDK will call this method automatically. 
  *			Caller should use it carefully, current reading status will be restored, but all the editing to document won't be 
  *          restored.
- *
- * @return	None.
  */
 + (void)recoverForOOM;
 
