@@ -30,7 +30,7 @@ public class FoxitPdf extends CordovaPlugin {
     public boolean execute(String action, JSONArray args, CallbackContext callbackContext) throws JSONException {
         if (action.equals("init")) {
             final String sn = args.getString(0);
-            final String key = args.getString(0);
+            final String key = args.getString(1);
             this.init(sn, key, callbackContext);
             return true;
         } else if (action.equals("Preview")){
@@ -86,10 +86,9 @@ public class FoxitPdf extends CordovaPlugin {
                 pdfViewCtrl.setUIExtensionsManager(uiExtensionsManager);
 
                 pdfViewCtrl.openDoc(path, null);
+                callbackContext.success("Open document success.");
             }
         });
-
-//        callbackContext.success("Open document success.");
     }
 
     private void setContentView(View view) {
