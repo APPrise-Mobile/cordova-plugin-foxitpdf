@@ -1,15 +1,15 @@
 /**
- * Copyright (C) 2003-2016, Foxit Software Inc..
+ * Copyright (C) 2003-2017, Foxit Software Inc..
  * All Rights Reserved.
  *
  * http://www.foxitsoftware.com
  *
- * The following code is copyrighted and is the proprietary of Foxit Software Inc.. It is not allowed to 
- * distribute any parts of Foxit Mobile PDF SDK to third party or public without permission unless an agreement 
+ * The following code is copyrighted and is the proprietary of Foxit Software Inc.. It is not allowed to
+ * distribute any parts of Foxit Mobile PDF SDK to third party or public without permission unless an agreement
  * is signed between Foxit Software Inc. and customers to explicitly grant customers permissions.
  * Review legal.txt for additional license and legal information.
-
  */
+
 #import <QuartzCore/QuartzCore.h>
 
 #import <MobileCoreServices/MobileCoreServices.h>
@@ -41,8 +41,7 @@ void FoxitLog(NSString *format, ...)
         va_start(args, format);
         NSString * msg = [[NSString alloc] initWithFormat:format arguments:args];
         NSLog(@"%@", msg);
-        [msg release];
-        va_end(args);
+                va_end(args);
     }
 #endif
 }
@@ -98,7 +97,7 @@ void FoxitLog(NSString *format, ...)
 
 + (NSString *)displayDateInYMDHM:(NSDate *)date hasSymbol:(BOOL)hasSymbol
 {
-    NSDateFormatter* dateFormatter = [[[NSDateFormatter alloc] init] autorelease];
+    NSDateFormatter* dateFormatter = [[NSDateFormatter alloc] init];
     [dateFormatter setDateFormat:hasSymbol ? @"yyyy-MM-dd HH:mm" : @"yyyyMMddHHmm"];
     return [dateFormatter stringFromDate:date];
 }
@@ -136,7 +135,7 @@ void FoxitLog(NSString *format, ...)
 //Get Rect by two points
 + (FSRectF *)convertToFSRect:(FSPointF *)p1 p2:(FSPointF *)p2
 {
-    FSRectF *rect = [[[FSRectF alloc] init] autorelease];
+    FSRectF *rect = [[FSRectF alloc] init];
     rect.left = MIN([p1 getX], [p2 getX]);
     rect.right = MAX([p1 getX], [p2 getX]);
     rect.top = MAX([p1 getY], [p2 getY]);
@@ -159,10 +158,10 @@ void FoxitLog(NSString *format, ...)
 {
     CFUUIDRef uuid = CFUUIDCreate(NULL);
     CFStringRef strUUID = CFUUIDCreateString(NULL, uuid);
-    NSString * ret = [[(NSString *)strUUID lowercaseString] retain];
+    NSString * ret = [(__bridge NSString *)strUUID lowercaseString];
     CFRelease(strUUID);
     CFRelease(uuid);
-    return [ret autorelease];
+    return ret;
 }
 
 + (CGSize)getTextSize:(NSString*)text fontSize:(float)fontSize maxSize:(CGSize)maxSize
@@ -199,7 +198,7 @@ void FoxitLog(NSString *format, ...)
 
 + (NSArray *)getAnnots:(FSPDFPage*)page
 {
-    NSMutableArray* array = [[[NSMutableArray alloc] init] autorelease];
+    NSMutableArray* array = [[NSMutableArray alloc] init];
     
     int count = [page getAnnotCount];
     
@@ -223,7 +222,8 @@ void FoxitLog(NSString *format, ...)
             e_annotStamp == type ||
             e_annotInk == type ||
             e_annotCaret == type ||
-            e_annotLine == type
+            e_annotLine == type ||
+            e_annotFileAttachment == type
             )
         {
             [array addObject:fsannot];
@@ -252,7 +252,7 @@ void FoxitLog(NSString *format, ...)
     if (![markup isGrouped]) {
         return markup.fsrect;
     }
-    CGRect unionRect;
+    CGRect unionRect = CGRectZero;
     for (int i = 0; i < [markup getGroupElementCount]; i ++) {
         FSAnnot* annot = [markup getGroupElement:i];
         if (i == 0) {
@@ -405,8 +405,7 @@ void FoxitLog(NSString *format, ...)
                         NSArray *array = [NSArray arrayWithObjects:[NSValue valueWithCGRect:[Utility FSRectF2CGRect:rectResult]],[NSNumber numberWithInt:direction1],nil];
                         [ret replaceObjectAtIndex:i withObject:array];
                         [ret removeObjectAtIndex:j];
-                        [rectResult release];
-                    }
+                                            }
                     else
                     {
                         j++;
@@ -422,6 +421,9 @@ void FoxitLog(NSString *format, ...)
 
 + (BOOL)isGivenPath:(NSString*)path type:(NSString*)type
 {
+    if ([type isEqualToString:@"*"]) {
+        return YES;
+    }
     NSString *dotType =[NSString stringWithFormat:@".%@",type];
     if([path.pathExtension.lowercaseString isEqualToString:type.lowercaseString])
     {
@@ -436,6 +438,9 @@ void FoxitLog(NSString *format, ...)
 
 + (BOOL)isGivenExtension:(NSString*)extension type:(NSString*)type
 {
+    if ([type isEqualToString:@"*"]) {
+        return YES;
+    }
     return [extension.lowercaseString isEqualToString:type.lowercaseString];
 }
 
@@ -493,6 +498,37 @@ static void _CGDataProviderReleaseDataCallback(void *info, const void *data, siz
     return NO;
 }
 
++ (BOOL)quadsEqualToQuads:(FSQuadPoints*)quads1 quads:(FSQuadPoints*)quads2
+{
+    return [Utility pointEqualToPoint:[quads1 getFirst] point:[quads2 getFirst]] &&
+    [Utility pointEqualToPoint:[quads1 getSecond] point:[quads2 getSecond]] &&
+    [Utility pointEqualToPoint:[quads1 getThird] point:[quads2 getThird]] &&
+    [Utility pointEqualToPoint:[quads1 getFourth] point:[quads2 getFourth]];
+}
+
++ (BOOL)pointEqualToPoint:(FSPointF*)point1 point:(FSPointF*)point2
+{
+    return fabsf(point1.x - point2.x) < 1e-4 &&
+    fabsf(point1.y - point2.y) < 1e-4;
+}
+
++ (BOOL)inkListEqualToInkList:(FSPDFPath*)inkList1 inkList:(FSPDFPath*)inkList2
+{
+    int count = [inkList1 getPointCount];
+    if (count != [inkList2 getPointCount]) {
+        return NO;
+    }
+    for (int i = 0; i < count; i ++) {
+        if (![Utility pointEqualToPoint:[inkList2 getPoint:i] point:[inkList2 getPoint:i]]) {
+            return NO;
+        }
+        if ([inkList1 getPointType:i] != [inkList2 getPointType:i]) {
+            return NO;
+        }
+    }
+    return YES;
+}
+
 + (CGRect)FSRectF2CGRect:(FSRectF*)fsrect
 {
     if (fsrect == nil) {
@@ -503,7 +539,7 @@ static void _CGDataProviderReleaseDataCallback(void *info, const void *data, siz
 
 + (FSRectF*)CGRect2FSRectF:(CGRect)rect
 {
-    FSRectF* fsrect = [[[FSRectF alloc] init] autorelease];
+    FSRectF* fsrect = [[FSRectF alloc] init];
     [fsrect set:rect.origin.x bottom:rect.origin.y + rect.size.height right:rect.origin.x + rect.size.width top:rect.origin.y];
     return fsrect;
 }
@@ -532,9 +568,7 @@ static void _CGDataProviderReleaseDataCallback(void *info, const void *data, siz
     [comps setSecond:[time getSecond]];
     NSCalendar *gregorian = [[NSCalendar alloc] initWithCalendarIdentifier:NSGregorianCalendar];
     NSDate *date = [gregorian dateFromComponents:comps];
-    [gregorian release];
-    [comps release];
-    return date;
+            return date;
 }
 
 + (FSDateTime *)convert2FSDateTime:(NSDate*)date
@@ -542,7 +576,7 @@ static void _CGDataProviderReleaseDataCallback(void *info, const void *data, siz
     NSCalendar *gregorian = [[NSCalendar alloc] initWithCalendarIdentifier:NSGregorianCalendar];
     unsigned unitFlags = NSYearCalendarUnit | NSMonthCalendarUnit |  NSDayCalendarUnit | NSHourCalendarUnit | NSMinuteCalendarUnit | NSSecondCalendarUnit ;
     NSDateComponents *comps = [gregorian components:unitFlags fromDate:date];
-    FSDateTime *time = [[[FSDateTime alloc] init] autorelease];
+    FSDateTime *time = [[FSDateTime alloc] init];
     time.year = [comps year];
     time.month = [comps month];
     time.day = [comps day];
@@ -550,9 +584,8 @@ static void _CGDataProviderReleaseDataCallback(void *info, const void *data, siz
     time.minute = [comps minute];
     time.second = [comps second];
     time.UTHourOffset = timezone / 3600 * -1;
-    time.UTMinuteOffset = (abs(timezone) % 3600) / 60;
-    [gregorian release];
-    return time;
+    time.UTMinuteOffset = (labs(timezone) % 3600) / 60;
+        return time;
 }
 
 CGPDFDocumentRef GetPDFDocumentRef (const char *filename)
@@ -560,7 +593,6 @@ CGPDFDocumentRef GetPDFDocumentRef (const char *filename)
     CFStringRef path;
     CFURLRef url;
     CGPDFDocumentRef document;
-    size_t count;
     
     path = CFStringCreateWithCString (NULL, filename, kCFStringEncodingUTF8);
     
@@ -570,12 +602,14 @@ CGPDFDocumentRef GetPDFDocumentRef (const char *filename)
     
     document = CGPDFDocumentCreateWithURL (url);
     
-    count = CGPDFDocumentGetNumberOfPages (document);
-    if (count == 0) {
-        printf("`%s' needs at least onepage!", filename);
-        CFRelease(url);
-        CGPDFDocumentRelease(document);
-        return NULL;
+    if (document) {
+        if (CGPDFDocumentGetNumberOfPages(document) == 0) {
+            CGPDFDocumentRelease(document);
+            document = nil;
+            printf("`%s' needs at least onepage!\n", filename);
+        }
+    } else {
+        printf("`%s' is corrupted.\n", filename);
     }
     
     CFRelease(url);
@@ -584,74 +618,74 @@ CGPDFDocumentRef GetPDFDocumentRef (const char *filename)
 
 + (CGSize)getPDFPageSizeWithIndex:(NSUInteger)index pdfPath:(NSString *)path
 {
-    @synchronized(self)
-    {
-        CGPDFDocumentRef document = nil;
-        CGPDFPageRef page;
-        document = GetPDFDocumentRef ([path cStringUsingEncoding:NSUTF8StringEncoding]);
-        if (document == nil)
-        {
-            return CGSizeMake(0, 0);
+    @autoreleasepool {
+        @synchronized(self) {
+            CGPDFDocumentRef document = nil;
+            CGPDFPageRef page;
+            document = GetPDFDocumentRef ([path cStringUsingEncoding:NSUTF8StringEncoding]);
+            if (document == nil) {
+                return CGSizeMake(0, 0);
+            }
+            page = CGPDFDocumentGetPage (document, 1);
+            CGRect pageRect = CGRectIntegral(CGPDFPageGetBoxRect(page, kCGPDFCropBox));
+            CGPDFDocumentRelease(document);
+            return pageRect.size;
         }
-        page = CGPDFDocumentGetPage (document, 1);
-        CGRect pageRect = CGRectIntegral(CGPDFPageGetBoxRect(page, kCGPDFCropBox));
-        CFRelease(document);
-        return pageRect.size;
     }
 }
 
 + (UIImage *)drawPageThumbnailWithPDFPath:(NSString *)pdfPath pageIndex:(int)pageIndex pageSize:(CGSize)size
 {
-    @synchronized(self)
-    {
-        CGPDFDocumentRef document;
-        CGPDFPageRef page;
-        document = GetPDFDocumentRef([pdfPath cStringUsingEncoding:NSUTF8StringEncoding]);
-        if (document == nil)
-        {
-            return nil;
+    @autoreleasepool {
+        @synchronized(self) {
+            CGPDFDocumentRef document;
+            CGPDFPageRef page;
+            document = GetPDFDocumentRef([pdfPath cStringUsingEncoding:NSUTF8StringEncoding]);
+            if (document == nil)
+            {
+                return nil;
+            }
+            page = CGPDFDocumentGetPage (document, pageIndex + 1);
+            UIGraphicsBeginImageContextWithOptions(size, NO, 4);
+            CGContextSetRGBFillColor( UIGraphicsGetCurrentContext(), 1.0, 1.0, 1.0, 1.0 );
+            CGContextFillRect( UIGraphicsGetCurrentContext(), CGContextGetClipBoundingBox(UIGraphicsGetCurrentContext()));
+            CGContextSaveGState(UIGraphicsGetCurrentContext());
+            
+            CGContextTranslateCTM( UIGraphicsGetCurrentContext(), 0.0, size.height);
+            CGContextScaleCTM( UIGraphicsGetCurrentContext(), 1.0, -1.0 );
+            
+            CGAffineTransform pdfXfm =
+            CGPDFPageGetDrawingTransform(page, kCGPDFMediaBox, CGRectMake(0, 0, size.width, size.height), 0, true );
+            CGContextConcatCTM( UIGraphicsGetCurrentContext(), pdfXfm );
+            
+            CGContextSetInterpolationQuality(UIGraphicsGetCurrentContext(), kCGInterpolationHigh);
+            CGContextSetRenderingIntent(UIGraphicsGetCurrentContext(), kCGRenderingIntentDefault);
+            CGContextDrawPDFPage( UIGraphicsGetCurrentContext(), page);
+            CGContextRestoreGState(UIGraphicsGetCurrentContext());
+            
+            UIImage *image = UIGraphicsGetImageFromCurrentImageContext();
+            UIGraphicsEndImageContext();
+            CGPDFDocumentRelease(document);
+            return image;
         }
-        page = CGPDFDocumentGetPage (document, pageIndex + 1);
-        UIGraphicsBeginImageContextWithOptions(size, NO, 4);
-        CGContextSetRGBFillColor( UIGraphicsGetCurrentContext(), 1.0, 1.0, 1.0, 1.0 );
-        CGContextFillRect( UIGraphicsGetCurrentContext(), CGContextGetClipBoundingBox(UIGraphicsGetCurrentContext()));
-        CGContextSaveGState(UIGraphicsGetCurrentContext());
-        
-        CGContextTranslateCTM( UIGraphicsGetCurrentContext(), 0.0, size.height);
-        CGContextScaleCTM( UIGraphicsGetCurrentContext(), 1.0, -1.0 );
-        
-        CGAffineTransform pdfXfm =
-        CGPDFPageGetDrawingTransform(page, kCGPDFMediaBox, CGRectMake(0, 0, size.width, size.height), 0, true );
-        CGContextConcatCTM( UIGraphicsGetCurrentContext(), pdfXfm );
-        
-        CGContextSetInterpolationQuality(UIGraphicsGetCurrentContext(), kCGInterpolationHigh);
-        CGContextSetRenderingIntent(UIGraphicsGetCurrentContext(), kCGRenderingIntentDefault);
-        CGContextDrawPDFPage( UIGraphicsGetCurrentContext(), page);
-        CGContextRestoreGState(UIGraphicsGetCurrentContext());
-        
-        UIImage *image = UIGraphicsGetImageFromCurrentImageContext();
-        UIGraphicsEndImageContext();
-        CFRelease(document);
-        return image;
     }
 }
 
 + (enum FS_ENCRYPTTYPE)getDocumentSecurityType:(NSString*)filePath taskServer:(TaskServer*)taskServer
 {
-    __block enum FS_ERRORCODE ret = e_encryptCustom;
-    Task *task = [[[Task alloc] init] autorelease];
+    __block enum FS_ERRORCODE ret = e_errUnknown;
+    Task *task = [[Task alloc] init];
     task.run = ^(){
         enum FS_MODULERIGHT right = [FSLibrary getModuleRight:e_moduleNameStandard];
         if(right == e_moduleRightNone || right == e_moduleRightUnknown)
             return;
-        FSPDFDoc* fspdfdoc = [FSPDFDoc createFromFilePath:filePath];
-        ret = [fspdfdoc load:nil];
-        if (ret != e_errSuccess && ret != e_errHandler) {
-            return;
+        @autoreleasepool {
+            FSPDFDoc* fspdfdoc = [FSPDFDoc createFromFilePath:filePath];
+            ret = [fspdfdoc load:nil];
         }
     };
     if(!taskServer)
-        taskServer = [[[TaskServer alloc] init] autorelease];
+        taskServer = [[TaskServer alloc] init];
     [taskServer executeSync:task];
     
     if (ret == e_errSuccess) {
@@ -715,7 +749,7 @@ CGPDFDocumentRef GetPDFDocumentRef (const char *filename)
 
 + (float)convertWidth:(float)width fromPageViewToPDF:(FSPDFViewCtrl*)pdfViewCtrl pageIndex:(int)pageIndex
 {
-    FSRectF *fsRect = [[[FSRectF alloc] init] autorelease];
+    FSRectF *fsRect = [[FSRectF alloc] init];
     [fsRect set:0 bottom:width right:width top:0];
     CGRect pvRect = [pdfViewCtrl convertPdfRectToPageViewRect:fsRect pageIndex:pageIndex];
     return pvRect.size.width;
@@ -828,9 +862,16 @@ static const char * s_StandardFontNames[] = {
 
 + (FSRectF*)makeFSRectWithLeft:(float)left top:(float)top right:(float)right bottom:(float)bottom
 {
-    FSRectF* rect = [[[FSRectF alloc] init] autorelease];
+    FSRectF* rect = [[FSRectF alloc] init];
     [rect set:left bottom:bottom right:right top:top];
     return rect;
+}
+
++ (FSPointF*)makeFSPointWithX:(float)x y:(float)y
+{
+    FSPointF* point = [[FSPointF alloc] init];
+    [point set:x y:y];
+    return point;
 }
 
 + (NSString*)getErrorCodeDescription:(enum FS_ERRORCODE)error
@@ -861,6 +902,577 @@ static const char * s_StandardFontNames[] = {
         default:
             return @"";
     }
+}
+
++ (FSAnnot*)getAnnotByNM:(NSString*)nm inPage:(FSPDFPage*)page
+{
+    for (int i = 0; i < [page getAnnotCount]; i ++) {
+        FSAnnot* annot = [page getAnnot:i];
+        if ([annot.NM isEqualToString:nm]) {
+            return annot;
+        }
+    }
+    return nil;
+}
+
++ (FSRectF*)cloneRect:(FSRectF*)rect
+{
+    FSRectF* clone = [[FSRectF alloc] init];
+    [clone set:rect.left bottom:rect.bottom right:rect.right top:rect.top];
+    return clone;
+}
+
++ (FSPointF*)clonePoint:(FSPointF*)point
+{
+    FSPointF* clone = [[FSPointF alloc] init];
+    [clone set:point.x y:point.y];
+    return clone;
+}
+
++ (FSPDFPath*)cloneInkList:(FSPDFPath*)inkList
+{
+    if (!inkList) {
+        return nil;
+    }
+    int count = [inkList getPointCount];
+    FSPDFPath* clone = [FSPDFPath create];
+    if (count > 0) {
+        [clone moveTo:[inkList getPoint:0]];
+    }
+    FSPointF* pointZero = [Utility makeFSPointWithX:0 y:0];
+    for (int i = 1; i < count; i++) {
+        [clone lineTo:pointZero];
+    }
+    for (int i = 0; i < count; i++) {
+        [clone setPoint:i point:[inkList getPoint:i] pointType:[inkList getPointType:i]];
+    }
+    return clone;
+}
+
++(UIImage*)scaleToSize:(UIImage*)oriImage size:(CGSize)size
+{
+    CGFloat width = CGImageGetWidth(oriImage.CGImage);
+    CGFloat height = CGImageGetHeight(oriImage.CGImage);
+    
+    float verticalRadio = size.height*1.0/height;
+    float horizontalRadio = size.width*1.0/width;
+    
+    float radio = 1;
+    if(verticalRadio>1 && horizontalRadio>1)
+    {
+        radio = verticalRadio > horizontalRadio ? horizontalRadio : verticalRadio;
+    }
+    else
+    {
+        radio = verticalRadio < horizontalRadio ? verticalRadio : horizontalRadio;
+    }
+    
+    width = width*radio;
+    height = height*radio;
+    
+    int xPos = (size.width - width)/2;
+    int yPos = (size.height-height)/2;
+    
+
+    UIGraphicsBeginImageContext(size);
+    
+    [oriImage drawInRect:CGRectMake(xPos, yPos, width, height)];
+    
+    UIImage* scaledImage = UIGraphicsGetImageFromCurrentImageContext();
+    
+    UIGraphicsEndImageContext();
+    
+    return scaledImage;
+}
+
+
+//Get file type thumbnail name
++ (NSString *)getThumbnailName:(NSString *)path
+{
+    NSString *ret = DEVICE_iPHONE ? @"thumbnail_none_iphone" : @"thumbnail_none_ipad";
+    if ([self isPDFPath:path])
+    {
+        ret = DEVICE_iPHONE ? @"thumbnail_pdf_iphone" : @"thumbnail_pdf_ipad";
+    }
+    return ret;
+}
+
+#pragma mark file related
+
+//Verify file type
++ (BOOL)isPDFPath:(NSString*)path
+{
+    if([path.pathExtension.lowercaseString isEqualToString:@"pdf"])
+    {
+        return YES;
+    }
+    else if([path.lowercaseString isEqualToString:@".pdf"])
+    {
+        return YES;
+    }
+    return NO;
+}
+
++ (BOOL)isPDFExtension:(NSString*)extension
+{
+    return [extension.lowercaseString isEqualToString:@"pdf"];
+}
+
++ (BOOL)isSupportFormat:(NSString*)path
+{
+    if ([Utility isPDFPath:path] ||
+        [Utility isGivenPath:path type:@"txt"] ||
+        [Utility isGivenPath:path type:@"doc"] ||
+        [Utility isGivenPath:path type:@"docx"] ||
+        [Utility isGivenPath:path type:@"xls"] ||
+        [Utility isGivenPath:path type:@"xlsx"] ||
+        [Utility isGivenPath:path type:@"ppt"] ||
+        [Utility isGivenPath:path type:@"pptx"] ||
+        [Utility isGivenPath:path type:@"png"] ||
+        [Utility isGivenPath:path type:@"jpg"] ||
+        [Utility isGivenPath:path type:@"jpeg"] ||
+        [Utility isGivenPath:path type:@"zip"] ||
+        [Utility isGivenPath:path type:@"xml"] ||
+        [Utility isGivenPath:path type:@"html"] ||
+        [Utility isGivenPath:path type:@"htm"] ||
+        [Utility isGivenPath:path type:@"bmp"] ||
+        [Utility isGivenPath:path type:@"tif"] ||
+        [Utility isGivenPath:path type:@"tiff"] ||
+        [Utility isGivenPath:path type:@"gif"]
+        )
+    {
+        return YES;
+    }
+    return NO;
+}
+
+//Get filetype icon name
++ (NSString*)getIconName:(NSString*)path
+{
+    NSString *ret = @"list_none";
+    if ([Utility isPDFPath:path])
+    {
+        ret = @"list_pdf";
+    }
+    return ret;
+}
+
+//display the file size string
++ (NSString *)displayFileSize:(unsigned long long)byte
+{
+    if (byte < 1024)
+    {
+        return [NSString stringWithFormat:@"%lld B", byte];
+    }
+    else if(byte < 1024000)
+    {
+        return [NSString stringWithFormat:@"%.2f KB", byte/1024.0];
+    }
+    else if(byte < 1024000000)
+    {
+        return [NSString stringWithFormat:@"%.2f MB", byte/1024000.0];
+    }
+    else
+    {
+        return [NSString stringWithFormat:@"%.2f GB", byte/1024000000.0];
+    }
+}
+
++ (ScreenSizeMode)getScreenSizeMode
+{
+    CGRect screenSize = [[UIScreen mainScreen] bounds];
+    NSInteger screenWidth = screenSize.size.width;
+    NSInteger screenHeight = screenSize.size.height;
+    if (screenWidth == 480 || screenHeight == 480)
+    {
+        return ScreenSizeMode_35;
+    }
+    else if (screenWidth == 568 || screenHeight == 568)
+    {
+        return ScreenSizeMode_40;
+    }
+    else if (screenWidth == 667 || screenHeight == 667)
+    {
+        return ScreenSizeMode_47;
+    }
+    else if (screenWidth == 736 || screenHeight == 736)
+    {
+        return ScreenSizeMode_55;
+    }
+    else if (screenWidth == 1024 || screenHeight == 1024)
+    {
+        return ScreenSizeMode_97;
+    }
+    return ScreenSizeMode_35;
+}
+
+#define LIBRARY_PATH [NSSearchPathForDirectoriesInDomains(NSLibraryDirectory, NSUserDomainMask, YES) objectAtIndex:0]
+#define DATA_FOLDER_NAME @"Data"
+#define INTERNAL_FOLDER_NAME @"Internal"
+#define ATTACHMENT_FOLDER_NAME @"Attachment"
+#define DATA_PATH [LIBRARY_PATH stringByAppendingPathComponent:DATA_FOLDER_NAME]
+#define INTERNAL_PATH [DATA_PATH stringByAppendingPathComponent:INTERNAL_FOLDER_NAME]
+#define ATTACHMENT_PATH [INTERNAL_PATH stringByAppendingPathComponent:ATTACHMENT_FOLDER_NAME]
+
++ (NSString*)getAttachmentTempFilePath:(FSFileAttachment*)attachment
+{
+    return [ATTACHMENT_PATH stringByAppendingString:[NSString stringWithFormat:@"/%@_%@", attachment.NM, [[attachment getFileSpec] getFileName]]];
+}
+
++ (BOOL)loadAttachment:(FSFileAttachment*)annot toPath:(NSString*)attachmentPath
+{
+    NSFileManager* defaultManager = [NSFileManager defaultManager];
+    if (![defaultManager fileExistsAtPath:attachmentPath]) {
+        if (![defaultManager createDirectoryAtPath:[attachmentPath stringByDeletingLastPathComponent] withIntermediateDirectories:YES attributes:nil error:nil]) {
+            return NO;
+        }
+        FSFileSpec* attachFile = [annot getFileSpec];
+        if (!attachFile) {
+            return NO;
+        }
+        FSFileReadCallback* fileRead = [attachFile getFileData];
+        unsigned long long fileSize = [attachFile getFileSize];
+        @autoreleasepool {
+            NSMutableData *data = [NSMutableData data];
+            unsigned long long offset = 0;
+            unsigned long long bufferSize = 2048000;
+            while (1) {
+                @autoreleasepool {
+                    NSData* dataBlock = [fileRead readBlock:offset size:MIN(bufferSize, fileSize - offset)];
+                    if (dataBlock.length > 0) {
+                        offset += dataBlock.length;
+                        [data appendData:dataBlock];
+                    } else {
+                        break;
+                    }
+                }
+            }
+            [data writeToFile:attachmentPath atomically:YES];
+        }
+    }
+    return YES;
+}
+
++ (FSBitmap*)imgDataToBitmap:(NSData*)imgData
+{
+    UIImage *image = [UIImage imageWithData: imgData];
+    CGImageRef cgImg = [image CGImage];
+    CGDataProviderRef provider = CGImageGetDataProvider(cgImg);
+    CFDataRef data = CGDataProviderCopyData(provider);
+    int width = (int)CGImageGetWidth(cgImg);
+    int height = (int)CGImageGetHeight(cgImg);
+    size_t bPP = CGImageGetBitsPerPixel(cgImg);
+    if(bPP != 32)
+    {
+        return nil;
+    }
+    //Reverse bgr format to rgb
+    const unsigned char * buffer = CFDataGetBytePtr(data);
+    unsigned char* buf = (unsigned char*)buffer;
+    int Bpp = (int)bPP/8;
+    int stride32 = width*Bpp;
+    dispatch_apply(height, dispatch_get_global_queue (DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^(size_t ri) {
+        dispatch_apply(width, dispatch_get_global_queue (DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^(size_t j) {
+            long i = height - 1 - ri;
+            unsigned char tmp = buf[i*stride32 + j*Bpp    ];
+            buf[i*stride32 + j*Bpp    ] = buf[i*stride32 + j*Bpp + 2];
+            buf[i*stride32 + j*Bpp + 2] = tmp;
+        });
+    });
+    
+    FSBitmap* bitmap = [FSBitmap create:width height:height format:e_dibArgb buffer:(unsigned char*)buf pitch:0];
+    return bitmap;
+}
+
++ (NSDictionary<NSString*, FSPDFObject*> *)getNSDictionaryFromPDFDictionary:(FSPDFDictionary*)pdfDict
+{
+    NSMutableDictionary<NSString*, FSPDFObject*>* dict = [NSMutableDictionary<NSString*, FSPDFObject*> dictionary];
+    void *pos = nil;
+    while (1) {
+        pos = [pdfDict moveNext:pos];
+        NSString* key = [pdfDict getKey:pos];
+        if (key.length == 0) {
+            break;
+        }
+        FSPDFObject* obj = [pdfDict getValue:pos];
+        if (!obj) {
+            continue;
+        }
+        [dict setObject:obj forKey:key];
+    }
+    return dict;
+}
+
+#pragma mark icon string name to int
+
+static NSDictionary<NSString*, NSNumber*>* g_noteIconNameToType = nil;
+static NSDictionary<NSString*, NSNumber*>* g_attachmentIconNameToType = nil;
+static NSDictionary<NSString*, NSNumber*>* g_stampIconNameToType = nil;
+
++ (void)setupIconNameAndTypes
+{
+    static dispatch_once_t onceToken;
+    dispatch_once(&onceToken, ^{
+        // note
+        g_noteIconNameToType = @{
+                                  @FS_ANNOT_ICONNAME_TEXT_CHECK : @FPDF_ICONTYPE_NOTE_CHECK,
+                                   @FS_ANNOT_ICONNAME_TEXT_CIRCLE : @FPDF_ICONTYPE_NOTE_CIRCLE,
+                                   @FS_ANNOT_ICONNAME_TEXT_COMMENT : @FPDF_ICONTYPE_NOTE_COMMENT,
+                                   @FS_ANNOT_ICONNAME_TEXT_CROSS : @FPDF_ICONTYPE_NOTE_CROSS,
+                                   @FS_ANNOT_ICONNAME_TEXT_HELP : @FPDF_ICONTYPE_NOTE_HELP,
+                                   @FS_ANNOT_ICONNAME_TEXT_INSERT : @FPDF_ICONTYPE_NOTE_INSERT,
+                                   @FS_ANNOT_ICONNAME_TEXT_KEY : @FPDF_ICONTYPE_NOTE_KEY,
+                                   @FS_ANNOT_ICONNAME_TEXT_NEWPARAGRAPH : @FPDF_ICONTYPE_NOTE_NEWPARAGRAPH,
+                                   @FS_ANNOT_ICONNAME_TEXT_NOTE : @FPDF_ICONTYPE_NOTE_NOTE,
+                                   @FS_ANNOT_ICONNAME_TEXT_PARAGRAPH : @FPDF_ICONTYPE_NOTE_PARAGRAPH,
+                                   @FS_ANNOT_ICONNAME_TEXT_RIGHTARROW : @FPDF_ICONTYPE_NOTE_RIGHTARROW,
+                                   @FS_ANNOT_ICONNAME_TEXT_RIGHTPOINTER : @FPDF_ICONTYPE_NOTE_RIGHTPOINTER,
+                                   @FS_ANNOT_ICONNAME_TEXT_STAR : @FPDF_ICONTYPE_NOTE_STAR,
+                                   @FS_ANNOT_ICONNAME_TEXT_UPARROW : @FPDF_ICONTYPE_NOTE_UPARROW,
+                                   @FS_ANNOT_ICONNAME_TEXT_UPLEFTARROW : @FPDF_ICONTYPE_NOTE_UPLEFTARROW,
+                                   };
+        // attachment
+        g_attachmentIconNameToType = @{
+                                        @FS_ANNOT_ICONNAME_FILEATTACH_GRAPH : @FPDF_ICONTYPE_FILEATTACH_GRAPH,
+                                         @FS_ANNOT_ICONNAME_FILEATTACH_PAPERCLIP : @FPDF_ICONTYPE_FILEATTACH_PAPERCLIP,
+                                         @FS_ANNOT_ICONNAME_FILEATTACH_PUSHPIN : @FPDF_ICONTYPE_FILEATTACH_PUSHPIN,
+                                         @FS_ANNOT_ICONNAME_FILEATTACH_TAG : @FPDF_ICONTYPE_FILEATTACH_TAG,
+                                         };
+        // stamp
+        g_stampIconNameToType = @{
+                                   @"Approved" : @0,
+                                   @"Completed" : @1,
+                                   @"Confidential" : @2,
+                                   @"Draft" : @3,
+                                   @"Emergency" : @4,
+                                   @"Expired" : @5,
+                                   @"Final" : @6,
+                                   @"Received" : @7,
+                                   @"Reviewed" : @8,
+                                   @"Revised" : @9,
+                                   @"Verified" : @10,
+                                   @"Void" : @11,
+                                   @"Accepted" : @12,
+                                   @"Initial" : @13,
+                                   @"Rejected" : @14,
+                                   @"Sign Here" : @15,
+                                   @"Witness" : @16,
+                                   @"DynaApproved" : @17,
+                                   @"DynaConfidential" : @18,
+                                   @"DynaReceived" : @19,
+                                   @"DynaReviewed" : @20,
+                                   @"DynaRevised" : @21,
+                                   };
+    });
+}
+
++ (int)getIconTypeWithIconName:(NSString*)iconName annotType:(enum FS_ANNOTTYPE)annotType
+{
+    [Utility setupIconNameAndTypes];
+    NSDictionary<NSString*, NSNumber*>* nameToType = nil;
+    switch (annotType) {
+        case e_annotNote:
+            nameToType = g_noteIconNameToType;
+            break;
+        case e_annotFileAttachment:
+            nameToType = g_attachmentIconNameToType;
+            break;
+        case e_annotStamp:
+            nameToType = g_stampIconNameToType;
+            break;
+        default:
+            break;
+    }
+    __block int iconType = FPDF_ICONTYPE_UNKNOWN;
+    [nameToType enumerateKeysAndObjectsUsingBlock:^(NSString *_iconName, NSNumber *_iconType, BOOL * stop) {
+        if ([_iconName caseInsensitiveCompare:iconName] == NSOrderedSame) {
+            iconType = [_iconType intValue];
+            *stop = YES;
+        }
+    }];
+    return iconType;
+}
+
++ (NSString*)getIconNameWithIconType:(int)iconType annotType:(enum FS_ANNOTTYPE)annotType
+{
+    [Utility setupIconNameAndTypes];
+    NSDictionary<NSString*, NSNumber*>* nameToType = nil;
+    switch (annotType) {
+        case e_annotNote:
+            nameToType = g_noteIconNameToType;
+            break;
+        case e_annotFileAttachment:
+            nameToType = g_attachmentIconNameToType;
+            break;
+        case e_annotStamp:
+            nameToType = g_stampIconNameToType;
+            break;
+        default:
+            break;
+    }
+    
+    __block NSString* iconName = nil;
+    [nameToType enumerateKeysAndObjectsUsingBlock:^(NSString * _Nonnull _iconName, NSNumber * _Nonnull _iconType, BOOL * _Nonnull stop) {
+        if ([_iconType intValue] == iconType) {
+            iconName = _iconName;
+            *stop = YES;
+        }
+    }];
+    return iconName;
+}
+
++ (BOOL)isValidIconName:(NSString*)iconName annotType:(enum FS_ANNOTTYPE)annotType
+{
+    return [Utility getIconTypeWithIconName:iconName annotType:annotType] != FPDF_ICONTYPE_UNKNOWN;
+}
+
++ (NSArray<NSString *> *)getAllIconLowercaseNames
+{
+    [Utility setupIconNameAndTypes];
+    NSMutableArray<NSString *> *iconNames = [NSMutableArray<NSString *> array];
+    for (NSDictionary* dict in @[g_noteIconNameToType, g_stampIconNameToType, g_attachmentIconNameToType]) {
+        for (NSString* key in dict.allKeys) {
+            [iconNames addObject:key.lowercaseString];
+        }
+    }
+    return iconNames;
+}
+
++(BOOL)isOwnerOfDoucment:(FSPDFDoc*)document
+{
+    int mdpPermission = [Utility getMDPDigitalSignPermissionInDocument:document];
+    if (mdpPermission != 0) {
+        return NO;
+    }
+    enum FS_PASSWORDTYPE passwordType = [document getPasswordType];
+    return (passwordType == e_pwdNoPassword || passwordType == e_pwdOwner);
+}
+
++(BOOL)canAddAnnotToDocument:(FSPDFDoc*)document
+{
+    if ([Utility isOwnerOfDoucment:document])
+        return YES;
+    int mdpPermission = [Utility getMDPDigitalSignPermissionInDocument:document];
+    if (mdpPermission == 1 || mdpPermission == 2) {
+        return NO;
+    }
+    return ([document getUserPermissions] & e_permAnnotForm) > 0;
+}
+
++(BOOL)canCopyTextInDocument:(FSPDFDoc*)document
+{
+    if ([Utility isOwnerOfDoucment:document])
+        return YES;
+    return ([document getUserPermissions] & e_permExtract) > 0;
+}
+
++(BOOL)canFillFormInDocument:(FSPDFDoc*)document
+{
+    if ([Utility isOwnerOfDoucment:document])
+        return YES;
+    int mdpPermission = [Utility getMDPDigitalSignPermissionInDocument:document];
+    if (mdpPermission == 1) {
+        return NO;
+    }
+    return ([document getUserPermissions] & e_permFillForm) > 0;
+}
+
++(BOOL)canAddSignToDocument:(FSPDFDoc*)document
+{
+    if ([Utility isOwnerOfDoucment:document])
+        return YES;
+    int mdpPermission = [Utility getMDPDigitalSignPermissionInDocument:document];
+    if (mdpPermission != 0) {
+        return NO;
+    }
+    // e_permFillForm means you may sign the existing signature, but not create one.
+    unsigned int perm = [document getUserPermissions];
+    return ((perm & e_permAnnotForm) != 0u && (perm & e_permModify) != 0u);
+}
+
++(BOOL)canAssembleDocument:(FSPDFDoc*)document
+{
+    unsigned int perm = [document getUserPermissions];
+    return [Utility isOwnerOfDoucment:document] || ((perm & e_permAssemble) != 0u);
+}
+
++ (int)getMDPDigitalSignPermissionInDocument:(FSPDFDoc*)document
+{
+    FSPDFDictionary* catalog = [document getCatalog];
+    FSPDFDictionary* perms = (FSPDFDictionary*)[[catalog getElement:@"Perms"] getDirectObject];
+    if (!perms || ![perms isKindOfClass:[FSPDFDictionary class]]) {
+        return 0;
+    }
+    FSPDFDictionary* docMDP = (FSPDFDictionary*)[[perms getElement:@"DocMDP"] getDirectObject];
+    if (!docMDP || ![docMDP isKindOfClass:[FSPDFDictionary class]]) {
+        return 0;
+    }
+    FSPDFArray* reference = (FSPDFArray*)[[docMDP getElement:@"Reference"] getDirectObject];
+    if (!reference || ![reference isKindOfClass:[FSPDFArray class]]) {
+        return 0;
+    }
+    for (int i = 0; i < reference.getElementCount; i ++) {
+        FSPDFDictionary* tmpDict = (FSPDFDictionary*)[[reference getElement:i] getDirectObject];
+        if (!tmpDict || ![tmpDict isKindOfClass:[FSPDFDictionary class]]) {
+            return 0;
+        }
+        NSString* transformMethod = [[[tmpDict getElement:@"TransformMethod"] getDirectObject] getString];
+        if (![transformMethod isEqualToString:@"DocMDP"]) {
+            continue;
+        }
+        FSPDFDictionary* transformParams = (FSPDFDictionary*)[[tmpDict getElement:@"TransformParams"] getDirectObject];
+        if (!transformParams || ![transformParams isKindOfClass:[FSPDFDictionary class]]
+            || [transformParams getCptr] == [tmpDict getCptr]) {
+            return 0;
+        }
+        int permisson = [[[transformParams getElement:@"P"] getDirectObject] getInteger];
+        return permisson;
+    }
+}
+
++ (void)assignImage:(UIImageView *)imageView rawFrame:(CGRect)frame image:(UIImage *)image
+{
+    if(image.size.width/image.size.height == frame.size.width/frame.size.height)
+    {
+        imageView.frame = [Utility getStandardRect:frame];
+    }
+    else if(image.size.width/image.size.height < frame.size.width/frame.size.height)
+    {
+        float realHeight = frame.size.height;
+        float realWidth = image.size.width/image.size.height*realHeight;
+        imageView.frame = [Utility getStandardRect:CGRectMake(frame.origin.x+(frame.size.width-realWidth)/2, frame.origin.y, realWidth, realHeight)];
+    }
+    else
+    {
+        float realWidth = frame.size.width;
+        float realHeight = image.size.height/image.size.width*realWidth;
+        imageView.frame = [Utility getStandardRect:CGRectMake(frame.origin.x, frame.origin.y+(frame.size.height-realHeight)/2, realWidth, realHeight)];
+    }
+    imageView.image = image;
+}
+
++ (NSArray *)searchFilesWithFolder:(NSString *)folder recursive:(BOOL)recursive
+{
+    NSMutableArray *fileList= [NSMutableArray array];
+    NSFileManager *fileManager= [[NSFileManager alloc] init];
+    NSArray *fileAndFolderList= [fileManager contentsOfDirectoryAtPath:folder error:nil];
+    for (NSString *file in fileAndFolderList)
+    {
+        BOOL isDir= NO;
+        NSString *thisFile= [folder stringByAppendingPathComponent:file];
+        if ([fileManager fileExistsAtPath:thisFile isDirectory:&isDir] && isDir)
+        {
+            if (recursive)
+            {
+                [fileList addObjectsFromArray:[[self class] searchFilesWithFolder:thisFile recursive:recursive]];
+            }
+        }
+        else
+        {
+            [fileList addObject:thisFile];
+        }
+    }
+    return (NSArray *)fileList;
 }
 
 @end

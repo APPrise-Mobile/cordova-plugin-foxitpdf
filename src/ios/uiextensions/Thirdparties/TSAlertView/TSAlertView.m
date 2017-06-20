@@ -219,6 +219,7 @@ const CGFloat kTSAlertView_ColumnMargin = 10.0;
 	[_messageLabel release];
 	[_messageTextView release];
 	[_messageTextViewMaskImageView release];
+    [_inputTextField release];
 	
 	[[NSNotificationCenter defaultCenter] removeObserver: self ];
 	

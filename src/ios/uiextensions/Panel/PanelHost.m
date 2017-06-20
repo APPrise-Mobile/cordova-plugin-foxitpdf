@@ -1,15 +1,15 @@
 /**
- * Copyright (C) 2003-2016, Foxit Software Inc..
+ * Copyright (C) 2003-2017, Foxit Software Inc..
  * All Rights Reserved.
  *
  * http://www.foxitsoftware.com
  *
- * The following code is copyrighted and is the proprietary of Foxit Software Inc.. It is not allowed to 
- * distribute any parts of Foxit Mobile PDF SDK to third party or public without permission unless an agreement 
+ * The following code is copyrighted and is the proprietary of Foxit Software Inc.. It is not allowed to
+ * distribute any parts of Foxit Mobile PDF SDK to third party or public without permission unless an agreement
  * is signed between Foxit Software Inc. and customers to explicitly grant customers permissions.
  * Review legal.txt for additional license and legal information.
-
  */
+
 #import "PanelHost.h"
 #import "UIExtensionsManager+Private.h"
 #import "IPanelSpec.h"
@@ -28,29 +28,29 @@
     {
         self.spaces = [[NSMutableArray alloc] init];
         if (DEVICE_iPHONE) {
-            self.contentView = [[[UIView alloc]initWithFrame:CGRectMake(0, 0, [UIScreen mainScreen].bounds.size.width, [UIScreen mainScreen].bounds.size.height)] autorelease];
+            self.contentView = [[UIView alloc]initWithFrame:CGRectMake(0, 0, [UIScreen mainScreen].bounds.size.width, [UIScreen mainScreen].bounds.size.height)];
         }
         else
         {
-            self.contentView = [[[UIView alloc]initWithFrame:CGRectMake(0, 0, 300, [UIScreen mainScreen].bounds.size.height)] autorelease];
+            self.contentView = [[UIView alloc]initWithFrame:CGRectMake(0, 0, 300, [UIScreen mainScreen].bounds.size.height)];
         }
         
         UIImage *normalImg = nil;
         UIImage *selImg = nil;
 
-        SegmentItem *bookmark = [[[SegmentItem alloc] init] autorelease];
+        SegmentItem *bookmark = [[SegmentItem alloc] init];
         bookmark.tag = 10;
         bookmark.image = [UIImage imageNamed:@"panel_top_bookmak_normal"];
         bookmark.selectImage = [UIImage imageNamed:@"panel_top_bookmak_selected"];
         
-        SegmentItem *outline = [[[SegmentItem alloc] init] autorelease];
+        SegmentItem *outline = [[SegmentItem alloc] init];
         outline.tag = 20;
         normalImg = [UIImage imageNamed:@"panel_top_outline_normal"];
         selImg = [UIImage imageNamed:@"panel_top_outline_selected"];
         outline.image = normalImg;
         outline.selectImage = selImg;
         
-        SegmentItem *annotation = [[[SegmentItem alloc] init] autorelease];
+        SegmentItem *annotation = [[SegmentItem alloc] init];
         annotation.tag = 30;
         normalImg = [UIImage imageNamed:@"panel_top_annot_normal"];
         selImg = [UIImage imageNamed:@"panel_top_annot_selected"];

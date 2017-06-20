@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2003-2016, Foxit Software Inc..
+ * Copyright (C) 2003-2017, Foxit Software Inc..
  * All Rights Reserved.
  *
  * http://www.foxitsoftware.com
@@ -8,8 +8,8 @@
  * distribute any parts of Foxit Mobile PDF SDK to third party or public without permission unless an agreement
  * is signed between Foxit Software Inc. and customers to explicitly grant customers permissions.
  * Review legal.txt for additional license and legal information.
- 
  */
+
 #import "ReadingBookmarkViewController.h"
 #import "Const.h"
 #import "ColorUtility.h"
@@ -44,7 +44,7 @@
     {
         _pdfViewCtrl = pdfViewCtrl;
         _panelController = panelController;
-        self.arrayBookmarks = [[[NSMutableArray alloc] init] autorelease];
+        self.arrayBookmarks = [[NSMutableArray alloc] init];
         _bookmarkGotoPageHandler = nil;
         _bookmarkSelectionHandler = nil;
         [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(deviceOrientationChange) name:ORIENTATIONCHANGED object:nil];
@@ -60,10 +60,6 @@
 - (void)dealloc
 {
     self.arrayBookmarks = nil;
-    [_bookmarkGotoPageHandler release];
-    [_bookmarkSelectionHandler release];
-    [_currentVC release];
-    [super dealloc];    
 }
 
 - (void)deviceOrientationChange
@@ -177,13 +173,14 @@
     cell.pageLabel.text = [bookmarkItem getTitle];
     cell.accessoryType = UITableViewCellAccessoryNone;
     cell.detailButton.object = cell.editView;
-
-    if(0 /*![[APPDELEGATE.app.read getDocMgr].currentDoc canAssemble] || [[APPDELEGATE.app.read getDocMgr].currentDoc isReviewDoc]*/)
-    {
-        cell.detailButton.enabled = NO;
-    }else{
+    if ([Utility canAssembleDocument:_pdfViewCtrl.currentDoc]) {
         cell.detailButton.enabled = YES;
+        cell.detailButton.hidden = NO;
+    } else {
+        cell.detailButton.enabled = NO;
+        cell.detailButton.hidden = YES;
     }
+    
     [cell.editView mas_remakeConstraints:^(MASConstraintMaker *make) {
         make.left.equalTo(cell.editView.superview.mas_right).offset(0);
         make.top.equalTo(cell.editView.superview.mas_top).offset(0);
@@ -301,13 +298,12 @@
         alertView.inputTextField.text = [bookmark getTitle];
         [alertView show];
         self.currentVC = alertView;
-        [alertView release];
-        
+                
     } else
     {
         BOOL isFullScreen = APPLICATION_ISFULLSCREEN;
-        __block UniversalEditViewController *editController = [[[UniversalEditViewController alloc] initWithNibName:[Utility getXibName:@"UniversalEditViewController"] bundle:nil] autorelease];
-        UINavigationController *editNavController = [[[UINavigationController alloc] initWithRootViewController:editController] autorelease];
+        __block UniversalEditViewController *editController = [[UniversalEditViewController alloc] initWithNibName:[Utility getXibName:@"UniversalEditViewController"] bundle:nil];
+        UINavigationController *editNavController = [[UINavigationController alloc] initWithRootViewController:editController];
         editController.title = NSLocalizedString(@"kRenameBookmark", nil);
         editController.textContent = [bookmark getTitle];
         editController.autoIntoEditing = YES;
@@ -322,7 +318,7 @@
             text = [text stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceCharacterSet]];
             if (text == nil || text.length == 0)
             {
-                AlertView *alertView = [[[AlertView alloc] initWithTitle:@"kWarning" message:@"kInputBookmarkName" buttonClickHandler:nil cancelButtonTitle:@"kOK" otherButtonTitles:nil] autorelease];
+                AlertView *alertView = [[AlertView alloc] initWithTitle:@"kWarning" message:@"kInputBookmarkName" buttonClickHandler:nil cancelButtonTitle:@"kOK" otherButtonTitles:nil];
                 self.currentVC = alertView;
                 [alertView show];
             }
@@ -372,7 +368,7 @@
             NSString *newName = [tsAlertView.inputTextField.text stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceCharacterSet]];
             if(newName == nil || newName.length == 0)
             {
-                AlertView *alertView = [[[AlertView alloc] initWithTitle:@"kWarning" message:@"kInputBookmarkName" buttonClickHandler:nil cancelButtonTitle:@"kOK" otherButtonTitles:nil] autorelease];
+                AlertView *alertView = [[AlertView alloc] initWithTitle:@"kWarning" message:@"kInputBookmarkName" buttonClickHandler:nil cancelButtonTitle:@"kOK" otherButtonTitles:nil];
                 self.currentVC = alertView;
                 [alertView show];
                 return;
@@ -389,7 +385,7 @@
 
 - (void)loadData
 {
-    NSMutableArray* bookmarks = [[[NSMutableArray alloc] init] autorelease];
+    NSMutableArray* bookmarks = [[NSMutableArray alloc] init];
     int count = [_pdfViewCtrl.currentDoc getReadingBookmarkCount];
     for(int i=0; i<count; i++)
     {
@@ -439,7 +435,7 @@
 
 - (void)refreshInterface
 {
-    UIView *view = [[[UIView alloc] init] autorelease];
+    UIView *view = [[UIView alloc] init];
     view.backgroundColor = [UIColor clearColor];
     [self.tableView setTableFooterView:view];
 

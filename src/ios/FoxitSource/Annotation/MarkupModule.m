@@ -1,37 +1,34 @@
 /**
- * Copyright (C) 2003-2016, Foxit Software Inc..
+ * Copyright (C) 2003-2017, Foxit Software Inc..
  * All Rights Reserved.
  *
  * http://www.foxitsoftware.com
  *
- * The following code is copyrighted and is the proprietary of Foxit Software Inc.. It is not allowed to 
- * distribute any parts of Foxit Mobile PDF SDK to third party or public without permission unless an agreement 
+ * The following code is copyrighted and is the proprietary of Foxit Software Inc.. It is not allowed to
+ * distribute any parts of Foxit Mobile PDF SDK to third party or public without permission unless an agreement
  * is signed between Foxit Software Inc. and customers to explicitly grant customers permissions.
  * Review legal.txt for additional license and legal information.
  */
+
 #import "MarkupModule.h"
 #import <FoxitRDK/FSPDFViewControl.h>
 #import "UIExtensionsSharedHeader.h"
 #import "Utility+Demo.h"
-#import "Defines.h"
+
 
 @interface MarkupModule () {
-    FSPDFViewCtrl* _pdfViewCtrl;
-    UIExtensionsManager* _extensionsManager;
-    ReadFrame* _readFrame;
+    FSPDFViewCtrl* __weak _pdfViewCtrl;
+    UIExtensionsManager* __weak _extensionsManager;
+    ReadFrame* __weak _readFrame;
     enum FS_ANNOTTYPE _annotType;
 }
 
-@property (nonatomic, retain) TbBaseItem *propertyItem;
+@property (nonatomic, weak) TbBaseItem *propertyItem;
 @end
 
 @implementation MarkupModule
 
--(void)dealloc
-{
-    [_propertyItem release];
-    [super dealloc];
-}
+
 
 - (instancetype)initWithUIExtensionsManager:(UIExtensionsManager*)extensionsManager readFrame:(ReadFrame*)readFrame
 {
@@ -132,12 +129,13 @@
         [_readFrame changeState:STATE_EDIT];
     };
 
-    [_extensionsManager registerPropertyBarListener:self];
-    self.propertyItem = [TbBaseItem createItemWithImage:backgrdImg imageSelected:backgrdImg imageDisable:backgrdImg];
-    _propertyItem.tag = 1;
+    [_extensionsManager registerAnnotPropertyListener:self];
+    TbBaseItem *propertyItem = [TbBaseItem createItemWithImage:backgrdImg imageSelected:backgrdImg imageDisable:backgrdImg];
+    self.propertyItem = propertyItem;
+    self.propertyItem.tag = 1;
     [self.propertyItem setInsideCircleColor:[_extensionsManager getPropertyBarSettingColor:_annotType]];
-    [_readFrame.toolSetBar addItem:_propertyItem displayPosition:Position_CENTER];
-    _propertyItem.onTapClick = ^(TbBaseItem* item)
+    [_readFrame.toolSetBar addItem:self.propertyItem displayPosition:Position_CENTER];
+    self.propertyItem.onTapClick = ^(TbBaseItem* item)
     {
         if (DEVICE_iPHONE) {
             CGRect rect = [item.contentView convertRect:item.contentView.bounds toView:_readFrame.pdfViewCtrl];
@@ -243,17 +241,14 @@
 
 -(void)dismissAnnotationContinue
 {
-    [Utility dismissAnnotationContinue:_readFrame.pdfViewCtrl];
+    [Utility dismissAnnotationContinue:_pdfViewCtrl];
 }
 
 #pragma mark - IAnnotPropertyListener
 
 - (void)onAnnotColorChanged:(unsigned int)color annotType:(enum FS_ANNOTTYPE)annotType
 {
-    if (_annotType == e_annotHighlight ||
-        _annotType == e_annotSquiggly ||
-        _annotType == e_annotStrikeOut ||
-        _annotType == e_annotUnderline) {
+    if (annotType == _annotType) {
         [self.propertyItem setInsideCircleColor:color];
     }
 }

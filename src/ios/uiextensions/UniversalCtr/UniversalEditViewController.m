@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2003-2016, Foxit Software Inc..
+ * Copyright (C) 2003-2017, Foxit Software Inc..
  * All Rights Reserved.
  *
  * http://www.foxitsoftware.com
@@ -14,6 +14,8 @@
 #import "UniversalEditViewController.h"
 #import "ColorUtility.h"
 #import "AlertView.h"
+#import "UINavigationItem+IOS7PaddingAdditions.h"
+
 @interface UniversalEditViewController ()
 
 - (void)initNavigationBar;
@@ -99,7 +101,6 @@
     self.textContent = nil;
     self.editingDoneHandler = nil;
     self.editingCancelHandler = nil;
-    [super dealloc];
 }
 
 - (void)viewDidUnload
@@ -185,8 +186,7 @@
      // ...
      // Pass the selected object to the new view controller.
      [self.navigationController pushViewController:detailViewController animated:YES];
-     [detailViewController release];
-     */
+          */
 }
 
 #pragma mark - properties
@@ -206,9 +206,7 @@
     {
         return;
     }
-    [textContent retain];
-    [_textContent release];
-    _textContent = textContent;
+        _textContent = textContent;
     [self.tableView reloadData];
 }
 
@@ -218,9 +216,7 @@
     {
         return;
     }
-    [placeholderText retain];
-    [_placeholderText release];
-    _placeholderText = placeholderText;
+        _placeholderText = placeholderText;
     [self.tableView reloadData];
 }
 
@@ -230,9 +226,7 @@
     {
         return;
     }
-    [footTipText retain];
-    [_footTipText release];
-    _footTipText = footTipText;
+        _footTipText = footTipText;
     [self.tableView reloadData];
 }
 
@@ -240,16 +234,14 @@
 
 - (void)textViewDidChange:(UITextView *)textView
 {
-    [_textContent release];
-    _textContent = [textView.text retain];
+        _textContent = textView.text;
 }
 
 #pragma mark - UITextField event
 
 - (IBAction)editingChanged:(UITextField *)sender
 {
-    [_textContent release];
-    _textContent = [sender.text retain];
+        _textContent = sender.text;
 }
 
 #pragma mark - event handler
@@ -257,7 +249,7 @@
 {
     if (_textContent == nil || _textContent.length == 0)
     {
-        AlertView *alertView = [[[AlertView alloc] initWithTitle:NSLocalizedString(@"kWarning",nil) message:NSLocalizedString(@"kInputNewFileName",nil) buttonClickHandler:nil cancelButtonTitle:nil otherButtonTitles:@"kOK", nil] autorelease];
+        AlertView *alertView = [[AlertView alloc] initWithTitle:NSLocalizedString(@"kWarning",nil) message:NSLocalizedString(@"kIllegalNameWarning",nil) buttonClickHandler:nil cancelButtonTitle:nil otherButtonTitles:@"kOK", nil];
         [alertView show];
         return;
     }
@@ -268,7 +260,7 @@
         return;
     }
     //Avi - in Case of foldername starting from . show error
-    else if ([[[_textContent stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]] substringWithRange:NSMakeRange(0, 1)] isEqualToString:@"."]) {
+    else if ([_textContent stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]].length != 0 && [[[_textContent stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]] substringWithRange:NSMakeRange(0, 1)] isEqualToString:@"."]) {
         
         AlertView *alertView = [[AlertView alloc] initWithTitle:NSLocalizedString(@"kWarning",nil) message:NSLocalizedString(@"kIllegalNameWarning",nil) buttonClickHandler:nil cancelButtonTitle:@"kOK" otherButtonTitles:nil];
         [alertView show];
@@ -301,7 +293,7 @@
     buttonCancel.titleLabel.font = [UIFont boldSystemFontOfSize:15.0f];
     [buttonCancel setTitleColor:[UIColor grayColor] forState:UIControlStateHighlighted];
     [buttonCancel addTarget:self action:@selector(cancelAction:) forControlEvents:UIControlEventTouchUpInside];
-    [self.navigationItem addLeftBarButtonItem:[[[UIBarButtonItem alloc] initWithCustomView:buttonCancel] autorelease]];
+    [self.navigationItem addLeftBarButtonItem:[[UIBarButtonItem alloc] initWithCustomView:buttonCancel]];
 
     UIButton *buttonDone = [UIButton buttonWithType:UIButtonTypeCustom];
     buttonDone.frame = CGRectMake(0.0, 0.0, 55.0, 32);
@@ -309,6 +301,6 @@
     buttonDone.titleLabel.font = [UIFont boldSystemFontOfSize:15.0f];
     [buttonDone setTitleColor:[UIColor grayColor] forState:UIControlStateHighlighted];
     [buttonDone addTarget:self action:@selector(doneAction:) forControlEvents:UIControlEventTouchUpInside];
-    [self.navigationItem addRightBarButtonItem:[[[UIBarButtonItem alloc] initWithCustomView:buttonDone] autorelease]];
+    [self.navigationItem addRightBarButtonItem:[[UIBarButtonItem alloc] initWithCustomView:buttonDone]];
 }
 @end

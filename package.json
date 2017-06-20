@@ -26,5 +26,8 @@
   "bugs": {
     "url": "https://github.com/foxitsoftware/cordova-plugin-foxitpdf/issues"
   },
-  "homepage": "https://github.com/foxitsoftware/cordova-plugin-foxitpdf#readme"
+  "homepage": "https://github.com/foxitsoftware/cordova-plugin-foxitpdf#readme",
+  "devDependencies": {
+    "xcode": "^0.9.3"
+  }
 }

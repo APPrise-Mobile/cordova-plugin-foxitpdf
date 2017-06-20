@@ -1,15 +1,15 @@
 /**
- * Copyright (C) 2003-2016, Foxit Software Inc..
+ * Copyright (C) 2003-2017, Foxit Software Inc..
  * All Rights Reserved.
  *
  * http://www.foxitsoftware.com
  *
- * The following code is copyrighted and is the proprietary of Foxit Software Inc.. It is not allowed to 
- * distribute any parts of Foxit Mobile PDF SDK to third party or public without permission unless an agreement 
+ * The following code is copyrighted and is the proprietary of Foxit Software Inc.. It is not allowed to
+ * distribute any parts of Foxit Mobile PDF SDK to third party or public without permission unless an agreement
  * is signed between Foxit Software Inc. and customers to explicitly grant customers permissions.
  * Review legal.txt for additional license and legal information.
-
  */
+
 #import "MoreAnnotationsBar.h"
 #import <FoxitRDK/FSPDFViewControl.h>
 
@@ -17,35 +17,36 @@
 @interface MoreAnnotationsBar ()
 
 //TextMarkup
-@property (nonatomic,retain) UILabel *textLabel;
+@property (nonatomic,strong) UILabel *textLabel;
 
-@property (nonatomic,retain) UIButton *highlightBtn;
-@property (nonatomic,retain) UIButton *underlineBtn;
-@property (nonatomic,retain) UIButton *breaklineBtn;
-@property (nonatomic,retain) UIButton *strokeoutBtn;
+@property (nonatomic,strong) UIButton *highlightBtn;
+@property (nonatomic,strong) UIButton *underlineBtn;
+@property (nonatomic,strong) UIButton *breaklineBtn;
+@property (nonatomic,strong) UIButton *strokeoutBtn;
 @property (nonatomic,strong) UIButton *insertBtn;
 @property (nonatomic,strong) UIButton *replaceBtn;
 
-@property (nonatomic,retain) UIView *divideView1;
+@property (nonatomic,strong) UIView *divideView1;
 
 //Draw
-@property (nonatomic,retain) UILabel *drawLabel;
+@property (nonatomic,strong) UILabel *drawLabel;
 
-@property (nonatomic,retain) UIButton *lineBtn;
-@property (nonatomic,retain) UIButton *rectBtn;
-@property (nonatomic,retain) UIButton *circleBtn;
-@property (nonatomic,retain) UIButton *arrowsBtn;
-@property (nonatomic,retain) UIButton *pencileBtn;
-@property (nonatomic,retain) UIButton *eraserBtn;
+@property (nonatomic,strong) UIButton *lineBtn;
+@property (nonatomic,strong) UIButton *rectBtn;
+@property (nonatomic,strong) UIButton *circleBtn;
+@property (nonatomic,strong) UIButton *arrowsBtn;
+@property (nonatomic,strong) UIButton *pencileBtn;
+@property (nonatomic,strong) UIButton *eraserBtn;
 
-@property (nonatomic,retain) UIView *divideView2;
+@property (nonatomic,strong) UIView *divideView2;
 
 //Others
-@property (nonatomic,retain) UILabel *othersLabel;
+@property (nonatomic,strong) UILabel *othersLabel;
 
-@property (nonatomic,retain) UIButton *typewriterBtn;
-@property (nonatomic,retain) UIButton *noteBtn;
-@property (nonatomic,retain) UIButton *stampBtn;
+@property (nonatomic,strong) UIButton *typewriterBtn;
+@property (nonatomic,strong) UIButton *noteBtn;
+@property (nonatomic,strong) UIButton *attachmentBtn;
+@property (nonatomic,strong) UIButton *stampBtn;
 
 @end
 
@@ -56,11 +57,11 @@
 {
     self = [super init];
     if (self) {
-        self.contentView = [[[UIView alloc] initWithFrame:frame] autorelease];
+        self.contentView = [[UIView alloc] initWithFrame:frame];
         self.contentView.backgroundColor = [UIColor whiteColor];
         
         //TextMarkup
-        self.textLabel = [[[UILabel alloc] init] autorelease];
+        self.textLabel = [[UILabel alloc] init];
         self.textLabel.text = NSLocalizedString(@"kMoreTextMarkup", nil);
         self.textLabel.font = [UIFont systemFontOfSize:16.0f];
         self.textLabel.textColor = [UIColor darkGrayColor];
@@ -95,12 +96,12 @@
         [self.contentView addSubview:self.insertBtn];
         [self.contentView addSubview:self.replaceBtn];
         
-        self.divideView1 = [[[UIView alloc] init] autorelease];
+        self.divideView1 = [[UIView alloc] init];
         self.divideView1.backgroundColor = [UIColor colorWithRGBHex:0xe6e6e6];
         [self.contentView addSubview:self.divideView1];
         
         //Drawing
-        self.drawLabel = [[[UILabel alloc] init] autorelease];
+        self.drawLabel = [[UILabel alloc] init];
         self.drawLabel.text = NSLocalizedString(@"kMoreDrawing", nil);
         self.drawLabel.font = [UIFont systemFontOfSize:16.0f];
         self.drawLabel.textColor = [UIColor darkGrayColor];
@@ -133,7 +134,7 @@
         [self.contentView addSubview:self.pencileBtn];
         [self.contentView addSubview:self.eraserBtn];
         
-        self.divideView2 = [[[UIView alloc] init] autorelease];
+        self.divideView2 = [[UIView alloc] init];
         self.divideView2.backgroundColor = [UIColor colorWithRGBHex:0xe6e6e6];
         [self.contentView addSubview:self.divideView2];
         
@@ -147,7 +148,7 @@
 
 
         //Others
-        self.othersLabel = [[[UILabel alloc] init] autorelease];
+        self.othersLabel = [[UILabel alloc] init];
         self.othersLabel.text = NSLocalizedString(@"kMoreOthers", nil);
         self.othersLabel.font = [UIFont systemFontOfSize:16.0f];
         self.othersLabel.textColor = [UIColor darkGrayColor];
@@ -157,21 +158,21 @@
         UIImage *typeriterImage = [UIImage imageNamed:@"annot_typewriter_more"];
         UIImage *noteImage = [UIImage imageNamed:@"annot_note_more"];
         UIImage *stampImage = [UIImage imageNamed:@"annot_stamp_more"];
+        UIImage *attachmentImage = [UIImage imageNamed:@"annot_attachment_more"];
         
         self.typewriterBtn = [MoreAnnotationsBar createItemWithImageAndTitle:NSLocalizedString(@"kTypewriter", nil) imageNormal:typeriterImage];
         self.noteBtn = [MoreAnnotationsBar createItemWithImageAndTitle:NSLocalizedString(@"kNote", nil) imageNormal:noteImage];
+        self.attachmentBtn = [MoreAnnotationsBar createItemWithImageAndTitle:NSLocalizedString(@"kAttachment", nil) imageNormal:attachmentImage];
         self.stampBtn = [MoreAnnotationsBar createItemWithImageAndTitle:NSLocalizedString(@"kPropertyStamps", nil) imageNormal:stampImage];
-        
-        self.typewriterBtn.frame = CGRectMake(0, 230, self.typewriterBtn.bounds.size.width,self.typewriterBtn.bounds.size.height);
-        self.noteBtn.frame = CGRectMake(0, 230, self.noteBtn.bounds.size.width,self.noteBtn.bounds.size.height);
-        self.stampBtn.frame = CGRectMake(0, 230, self.stampBtn.bounds.size.width,self.stampBtn.bounds.size.height);
         
         self.typewriterBtn.center = CGPointMake((frame.size.width-20)/8, 210);
         self.noteBtn.center = CGPointMake((frame.size.width-20)/8*3, 210);
-                self.stampBtn.center = CGPointMake((frame.size.width-20)/8*5, 210);
+        self.attachmentBtn.center = CGPointMake((frame.size.width-20)/8*5, 210);
+        self.stampBtn.center = CGPointMake((frame.size.width-20)/8*7, 210);
         
         [self.contentView addSubview:self.typewriterBtn];
         [self.contentView addSubview:self.noteBtn];
+        [self.contentView addSubview:self.attachmentBtn];
         [self.contentView addSubview:self.stampBtn];
 
         [self buildLayout];
@@ -181,46 +182,7 @@
     return self;
 }
 
-- (void)dealloc
-{
-    [_contentView release];
-    [_highLightClicked release];
-    [_underLineClicked release];
-    [_strikeOutClicked release];
-    [_breakLineClicked release];
-    [_replaceClicked release];
-    [_insertClicked release];
-    [_rectClicked release];
-    [_lineClicked release];
-    [_circleClicked release];
-    [_arrowsClicked release];
-    [_pencileClicked release];
-    [_eraserClicked release];
-    [_typerwriterClicked release];
-    [_noteClicked release];
-    [_textLabel release];
-    [_highlightBtn release];
-    [_underlineBtn release];
-    [_breaklineBtn release];
-    [_strokeoutBtn release];
-    [_insertBtn release];
-    [_replaceBtn release];
-    [_divideView1 release];
-    [_drawLabel release];
-    [_lineBtn release];
-    [_rectBtn release];
-    [_circleBtn release];
-    [_arrowsBtn release];
-    [_pencileBtn release];
-    [_eraserBtn release];
-    [_divideView2 release];
-    [_othersLabel release];
-    [_typewriterBtn release];
-    [_noteBtn release];
-    [_stampBtn release];
-    
-    [super dealloc];
-}
+
 
 -(void)buildLayout
 {
@@ -320,6 +282,7 @@
     [self.typewriterBtn addTarget:self action:@selector(onTyperwriterClicked) forControlEvents:UIControlEventTouchUpInside];
     
     [self.noteBtn addTarget:self action:@selector(onNoteClicked) forControlEvents:UIControlEventTouchUpInside];
+    [self.attachmentBtn addTarget:self action:@selector(onAttachClicked) forControlEvents:UIControlEventTouchUpInside];
     [self.stampBtn addTarget:self action:@selector(onStampClicked) forControlEvents:UIControlEventTouchUpInside];
 }
 
@@ -407,6 +370,12 @@
     }
 }
 
+-(void)onAttachClicked
+{
+    if (self.attachmentClicked) {
+        self.attachmentClicked();
+    }
+}
 
 -(void)onStampClicked
 {

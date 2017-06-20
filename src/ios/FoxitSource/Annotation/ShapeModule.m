@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2003-2016, Foxit Software Inc..
+ * Copyright (C) 2003-2017, Foxit Software Inc..
  * All Rights Reserved.
  *
  * http://www.foxitsoftware.com
@@ -8,32 +8,27 @@
  * distribute any parts of Foxit Mobile PDF SDK to third party or public without permission unless an agreement
  * is signed between Foxit Software Inc. and customers to explicitly grant customers permissions.
  * Review legal.txt for additional license and legal information.
- 
  */
 
 #import "ShapeModule.h"
 #import <FoxitRDK/FSPDFViewControl.h>
-#import "Defines.h"
+
 #import "Utility+Demo.h"
 
 @interface ShapeModule ()
 
-@property (nonatomic, retain) TbBaseItem *propertyItem;
+@property (nonatomic, weak) TbBaseItem *propertyItem;
 
 @end
 
 @implementation ShapeModule {
-    FSPDFViewCtrl* _pdfViewCtrl;
-    UIExtensionsManager* _extensionsManager;
-    ReadFrame* _readFrame;
+    FSPDFViewCtrl* __weak _pdfViewCtrl;
+    UIExtensionsManager* __weak _extensionsManager;
+    ReadFrame* __weak _readFrame;
     enum FS_ANNOTTYPE _annotType;
 }
 
--(void)dealloc
-{
-    [_propertyItem release];
-    [super dealloc];
-}
+
 
 - (instancetype)initWithUIExtensionsManager:(UIExtensionsManager*)extensionsManager readFrame:(ReadFrame*)readFrame
 {
@@ -50,7 +45,7 @@
 
 -(void)loadModule
 {
-    [_extensionsManager registerPropertyBarListener:self];
+    [_extensionsManager registerAnnotPropertyListener:self];
     
     TbBaseItem *rectItem = [TbBaseItem createItemWithImage:[UIImage imageNamed:@"annot_rect"] imageSelected:[UIImage imageNamed:@"annot_rect"] imageDisable:[UIImage imageNamed:@"annot_rect"]background:[UIImage imageNamed:@"annotation_toolitembg"]];
     rectItem.tag = DEVICE_iPHONE? EDIT_ITEM_RECTANGLE:-EDIT_ITEM_RECTANGLE;
@@ -95,7 +90,8 @@
         [_readFrame changeState:STATE_EDIT];
     };
     
-    self.propertyItem = [TbBaseItem createItemWithImage:[UIImage imageNamed:@"annotation_toolitembg"] imageSelected:[UIImage imageNamed:@"annotation_toolitembg"] imageDisable:[UIImage imageNamed:@"annotation_toolitembg"]];
+    TbBaseItem *propertyItem = [TbBaseItem createItemWithImage:[UIImage imageNamed:@"annotation_toolitembg"] imageSelected:[UIImage imageNamed:@"annotation_toolitembg"] imageDisable:[UIImage imageNamed:@"annotation_toolitembg"]];
+    self.propertyItem = propertyItem;
     self.propertyItem.tag = 1;
     [self.propertyItem setInsideCircleColor:[_extensionsManager getPropertyBarSettingColor:_annotType]];
     [_readFrame.toolSetBar addItem:self.propertyItem displayPosition:Position_CENTER];

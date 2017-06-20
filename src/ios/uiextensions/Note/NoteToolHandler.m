@@ -1,15 +1,15 @@
 /**
- * Copyright (C) 2003-2016, Foxit Software Inc..
+ * Copyright (C) 2003-2017, Foxit Software Inc..
  * All Rights Reserved.
  *
  * http://www.foxitsoftware.com
  *
- * The following code is copyrighted and is the proprietary of Foxit Software Inc.. It is not allowed to 
- * distribute any parts of Foxit Mobile PDF SDK to third party or public without permission unless an agreement 
+ * The following code is copyrighted and is the proprietary of Foxit Software Inc.. It is not allowed to
+ * distribute any parts of Foxit Mobile PDF SDK to third party or public without permission unless an agreement
  * is signed between Foxit Software Inc. and customers to explicitly grant customers permissions.
  * Review legal.txt for additional license and legal information.
-
  */
+
 #import "NoteToolHandler.h"
 #import "NoteDialog.h"
 #import "Preference.h"
@@ -26,11 +26,7 @@
     
 }
 
--(void)dealloc
-{
-    [_currentVC release];
-    [super dealloc];
-}
+
 
 - (instancetype)initWithUIExtensionsManager:(UIExtensionsManager*)extensionsManager
 {
@@ -94,12 +90,15 @@
         if (!page) return;
         FSNote* annot = (FSNote*)[page addAnnot:e_annotNote rect:dibRect];
         annot.icon = _extensionsManager.noteIcon;
-        annot.color = [_extensionsManager getPropertyBarSettingColor:self.type];
+        annot.color = [_extensionsManager getAnnotColor:self.type];
         annot.opacity = [_extensionsManager getAnnotOpacity:self.type] / 100.0f;
         annot.contents = [[NoteDialog defaultNoteDialog] getContent];
         annot.NM = [Utility getUUID];
         annot.author = [SettingPreference getAnnotationAuthor];
-        id<IAnnotHandler> annotHandler = [_extensionsManager getAnnotHandlerByType:annot.type];
+        FSDateTime *now = [Utility convert2FSDateTime:[NSDate date]];
+        [annot setCreationDateTime:now];
+        [annot setModifiedDateTime:now];
+        id<IAnnotHandler> annotHandler = [_extensionsManager getAnnotHandlerByAnnot:annot];
         [annotHandler addAnnot:annot];
     };
     

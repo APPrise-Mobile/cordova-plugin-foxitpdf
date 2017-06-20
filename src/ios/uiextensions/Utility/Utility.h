@@ -1,15 +1,15 @@
 /**
- * Copyright (C) 2003-2016, Foxit Software Inc..
+ * Copyright (C) 2003-2017, Foxit Software Inc..
  * All Rights Reserved.
  *
  * http://www.foxitsoftware.com
  *
- * The following code is copyrighted and is the proprietary of Foxit Software Inc.. It is not allowed to 
- * distribute any parts of Foxit Mobile PDF SDK to third party or public without permission unless an agreement 
+ * The following code is copyrighted and is the proprietary of Foxit Software Inc.. It is not allowed to
+ * distribute any parts of Foxit Mobile PDF SDK to third party or public without permission unless an agreement
  * is signed between Foxit Software Inc. and customers to explicitly grant customers permissions.
  * Review legal.txt for additional license and legal information.
-
  */
+
 #import <Foundation/Foundation.h>
 #import <MessageUI/MessageUI.h>
 
@@ -17,8 +17,11 @@
 #import <netinet/in.h>
 #import <sys/socket.h>
 
-#import <FoxitRDK/FSPDFObjc.h>
+#import <FoxitRDK/FSPDFObjC.h>
 #import <FoxitRDK/FSPDFViewControl.h>
+
+#import "../Const.h"
+#import "../Defines.h"
 
 typedef void(^CallBackInt)(long property,int value);
 
@@ -27,6 +30,64 @@ typedef void(^CallBackInt)(long property,int value);
 #define FOXIT_LOG_ON YES
 
 FOUNDATION_EXPORT void FoxitLog(NSString *format, ...);
+
+typedef enum
+{
+    ScreenSizeMode_35 = 0,    //3.5 inches
+    ScreenSizeMode_40,        //4 inches
+    ScreenSizeMode_47,        //4.7 inches
+    ScreenSizeMode_55,        //5.5 inches
+    ScreenSizeMode_97         //9.7 inches
+} ScreenSizeMode;
+
+
+/**
+ * @name Macro Definitions for icon type.
+ */
+/**@{*/
+/** @brief note icon type Check. */
+#define FPDF_ICONTYPE_NOTE_CHECK			0
+/** @brief note icon type Circle. */
+#define FPDF_ICONTYPE_NOTE_CIRCLE			1
+/** @brief note icon type Comment. */
+#define FPDF_ICONTYPE_NOTE_COMMENT			2
+/** @brief note icon type Cross. */
+#define FPDF_ICONTYPE_NOTE_CROSS			3
+/** @brief note icon type Help. */
+#define FPDF_ICONTYPE_NOTE_HELP				4
+/** @brief note icon type Insert. */
+#define FPDF_ICONTYPE_NOTE_INSERT			5
+/** @brief note icon type Key. */
+#define FPDF_ICONTYPE_NOTE_KEY				6
+/** @brief note icon type New Paragraph. */
+#define FPDF_ICONTYPE_NOTE_NEWPARAGRAPH		7
+/** @brief note icon type Note. */
+#define FPDF_ICONTYPE_NOTE_NOTE				8
+/** @brief note icon type Paragraph. */
+#define FPDF_ICONTYPE_NOTE_PARAGRAPH		9
+/** @brief note icon type Right Arrow. */
+#define FPDF_ICONTYPE_NOTE_RIGHTARROW		10
+/** @brief note icon type Right Pointer. */
+#define FPDF_ICONTYPE_NOTE_RIGHTPOINTER		11
+/** @brief note icon type Star. */
+#define FPDF_ICONTYPE_NOTE_STAR				12
+/** @brief note icon type Up Arrow. */
+#define FPDF_ICONTYPE_NOTE_UPARROW			13
+/** @brief note icon type Upleft Arrow. */
+#define FPDF_ICONTYPE_NOTE_UPLEFTARROW		14
+
+/** @brief file attachment icon type Graph. */
+#define FPDF_ICONTYPE_FILEATTACH_GRAPH		0
+/** @brief file attachment icon type PushPin. */
+#define FPDF_ICONTYPE_FILEATTACH_PUSHPIN	1
+/** @brief file attachment icon type PaperClip. */
+#define FPDF_ICONTYPE_FILEATTACH_PAPERCLIP	2
+/** @brief file attachment icon type Tag. */
+#define FPDF_ICONTYPE_FILEATTACH_TAG		3
+
+/** @brief Unknown icon type. */
+#define FPDF_ICONTYPE_UNKNOWN				-1
+/**@}*/
 
 @interface Utility : NSObject
 {}
@@ -74,6 +135,9 @@ FOUNDATION_EXPORT void FoxitLog(NSString *format, ...);
 + (UIImage*)dib2img:(void*)pBuf size:(int)size dibWidth:(int)dibWidth dibHeight:(int)dibHeight withAlpha:(BOOL)withAlpha;
 /** @brief Compare the two rect. */
 + (BOOL)rectEqualToRect:(FSRectF *)rect rect:(FSRectF *)rect1;
++ (BOOL)quadsEqualToQuads:(FSQuadPoints*)quads1 quads:(FSQuadPoints*)quads2;
++ (BOOL)pointEqualToPoint:(FSPointF*)point1 point:(FSPointF*)point2;
++ (BOOL)inkListEqualToInkList:(FSPDFPath*)inkList1 inkList:(FSPDFPath*)inkList2;
 
 + (CGRect)FSRectF2CGRect:(FSRectF*)fsrect;
 + (FSRectF*)CGRect2FSRectF:(CGRect)rect;
@@ -107,6 +171,47 @@ FOUNDATION_EXPORT void FoxitLog(NSString *format, ...);
 + (FSRectF*)normalizeFSRect:(FSRectF*)dibRect;
 + (CGRect)normalizeCGRect:(CGRect)rect;
 + (FSRectF*)makeFSRectWithLeft:(float)left top:(float)top right:(float)right bottom:(float)bottom;
++ (FSPointF*)makeFSPointWithX:(float)x y:(float)y;
 
 + (NSString*)getErrorCodeDescription:(enum FS_ERRORCODE)error;
+
++ (FSAnnot*)getAnnotByNM:(NSString*)nm inPage:(FSPDFPage*)page;
++ (FSRectF*)cloneRect:(FSRectF*)rect;
++ (FSPointF*)clonePoint:(FSPointF*)point;
++ (FSPDFPath*)cloneInkList:(FSPDFPath*)inkList;
+
++(UIImage*)scaleToSize:(UIImage*)oriImage size:(CGSize)size;
++ (NSString *)getThumbnailName:(NSString *)path;
+
++ (BOOL)isPDFPath:(NSString*)path;
++ (BOOL)isPDFExtension:(NSString*)extension;
++ (BOOL)isSupportFormat:(NSString*)path;
++ (NSString*)getIconName:(NSString*)path;
++ (NSString *)displayFileSize:(unsigned long long)byte;
+
++ (ScreenSizeMode)getScreenSizeMode;
+
++ (NSString*)getAttachmentTempFilePath:(FSFileAttachment*)attachment;
++ (BOOL)loadAttachment:(FSFileAttachment*)annot toPath:(NSString*)attachmentPath;
+
++ (FSBitmap*)imgDataToBitmap:(NSData*)imgData;
+
++ (NSDictionary<NSString*, FSPDFObject*> *)getNSDictionaryFromPDFDictionary:(FSPDFDictionary*)pdfDict;
+
++ (int)getIconTypeWithIconName:(NSString*)iconName annotType:(enum FS_ANNOTTYPE)annotType;
++ (NSString*)getIconNameWithIconType:(int)iconType annotType:(enum FS_ANNOTTYPE)annotType;
++ (BOOL)isValidIconName:(NSString*)iconName annotType:(enum FS_ANNOTTYPE)annotType;
++ (NSArray<NSString *> *)getAllIconLowercaseNames;
+
++(BOOL)isOwnerOfDoucment:(FSPDFDoc*)document;
++(BOOL)canAddAnnotToDocument:(FSPDFDoc*)document;
++(BOOL)canCopyTextInDocument:(FSPDFDoc*)document;
++(BOOL)canFillFormInDocument:(FSPDFDoc*)document;
++(BOOL)canAddSignToDocument:(FSPDFDoc*)document;
++(BOOL)canAssembleDocument:(FSPDFDoc*)document;
++ (int)getMDPDigitalSignPermissionInDocument:(FSPDFDoc*)document;
+
++ (void)assignImage:(UIImageView *)imageView rawFrame:(CGRect)frame image:(UIImage *)image;
+
++ (NSArray *)searchFilesWithFolder:(NSString *)folder recursive:(BOOL)recursive;
 @end

@@ -1,15 +1,15 @@
 /**
- * Copyright (C) 2003-2016, Foxit Software Inc..
+ * Copyright (C) 2003-2017, Foxit Software Inc..
  * All Rights Reserved.
  *
  * http://www.foxitsoftware.com
  *
- * The following code is copyrighted and is the proprietary of Foxit Software Inc.. It is not allowed to 
- * distribute any parts of Foxit Mobile PDF SDK to third party or public without permission unless an agreement 
+ * The following code is copyrighted and is the proprietary of Foxit Software Inc.. It is not allowed to
+ * distribute any parts of Foxit Mobile PDF SDK to third party or public without permission unless an agreement
  * is signed between Foxit Software Inc. and customers to explicitly grant customers permissions.
  * Review legal.txt for additional license and legal information.
-
  */
+
 #import "PermissionViewController.h"
 #import "UIExtensionsSharedHeader.h"
 
@@ -19,7 +19,7 @@
 {
     if (self=[super initWithStyle:style reuseIdentifier:reuseIdentifier]) {
         
-        UILabel *permission=[[[UILabel alloc]init]autorelease];
+        UILabel *permission=[[UILabel alloc]init];
         permission.tag=100;
         permission.autoresizingMask = UIViewAutoresizingFlexibleRightMargin | UIViewAutoresizingFlexibleWidth;
         permission.font =[UIFont systemFontOfSize:14.0f];
@@ -27,7 +27,7 @@
         permission.frame=CGRectMake(20, 10, self.bounds.size.width - 120, 40);
         permission.center = CGPointMake(permission.center.x, 22);
         
-        UILabel *allow=[[[UILabel alloc]init]autorelease];
+        UILabel *allow=[[UILabel alloc]init];
         allow.tag=101;
         allow.autoresizingMask = UIViewAutoresizingFlexibleLeftMargin;
         allow.font =[UIFont systemFontOfSize:14.0f];
@@ -81,9 +81,7 @@
     [buttonBack setContentHorizontalAlignment:UIControlContentHorizontalAlignmentLeft];
     UIBarButtonItem *barButtonBack = [[UIBarButtonItem alloc] initWithCustomView:buttonBack];
     [self.navigationItem addLeftBarButtonItem:barButtonBack];
-    [buttonBack release];
-    [barButtonBack release];
-    
+            
     if (!self.navigationItem.titleView)
     {
         CGRect titleViewFrame = CGRectMake(0.0, 0.0, 200.0, 44.0f);
@@ -114,10 +112,7 @@
         self.navigationItem.titleView.backgroundColor = [UIColor cyanColor];
         titleView.center = CGPointMake(self.view.frame.size.width/2, titleView.center.y);
         self.navigationItem.titleView = titleView;
-        [titleView release];
-        [titleLabel release];
-        [actIndicatorView release];
-    }
+                            }
     
     if (OS_ISVERSION7)
     {
@@ -145,7 +140,7 @@
     buttonDone.titleLabel.font = [UIFont boldSystemFontOfSize:15.0f];
      [buttonDone setTitleColor:[UIColor colorWithRGBHex:0x179CD8] forState:UIControlStateNormal];
     [buttonDone addTarget:self action:@selector(buttonDoneClicked:) forControlEvents:UIControlEventTouchUpInside];
-    [self.navigationItem addRightBarButtonItem:[[[UIBarButtonItem alloc] initWithCustomView:buttonDone] autorelease]];
+    [self.navigationItem addRightBarButtonItem:[[UIBarButtonItem alloc] initWithCustomView:buttonDone]];
 }
 
 - (void)viewWillAppear:(BOOL)animated
@@ -207,7 +202,7 @@
     PessmissionCell *cell = [tableView dequeueReusableCellWithIdentifier:CellIdentifier];
     if (cell == nil)
     {
-        cell = [[[PessmissionCell alloc] initWithStyle:UITableViewCellStyleSubtitle reuseIdentifier:CellIdentifier] autorelease];
+        cell = [[PessmissionCell alloc] initWithStyle:UITableViewCellStyleSubtitle reuseIdentifier:CellIdentifier];
     }
     UILabel *permission = (UILabel*)[cell.contentView viewWithTag:100];
     UILabel *allow = (UILabel*)[cell.contentView viewWithTag:101];

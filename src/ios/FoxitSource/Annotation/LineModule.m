@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2003-2016, Foxit Software Inc..
+ * Copyright (C) 2003-2017, Foxit Software Inc..
  * All Rights Reserved.
  *
  * http://www.foxitsoftware.com
@@ -8,35 +8,31 @@
  * distribute any parts of Foxit Mobile PDF SDK to third party or public without permission unless an agreement
  * is signed between Foxit Software Inc. and customers to explicitly grant customers permissions.
  * Review legal.txt for additional license and legal information.
-
  */
+
 #import "LineModule.h"
 #import <FoxitRDK/FSPDFViewControl.h>
 
 #import "UIExtensionsSharedHeader.h"
 #import "uiextensions/Line/LineToolHandler.h"
 #import "Utility+Demo.h"
-#import "Defines.h"
+
 @interface LineModule ()
 
-@property (nonatomic, retain) TbBaseItem *propertyItem;
+@property (nonatomic, weak) TbBaseItem *propertyItem;
 
 @end
 
 @implementation LineModule
 {
-    FSPDFViewCtrl* _pdfViewCtrl;
-    UIExtensionsManager* _extensionsManager;
-    ReadFrame* _readFrame;
+    FSPDFViewCtrl* __weak _pdfViewCtrl;
+    UIExtensionsManager* __weak _extensionsManager;
+    ReadFrame* __weak _readFrame;
      enum FS_ANNOTTYPE _annotType;
     BOOL _isArrLine;
 }
 
--(void)dealloc
-{
-    [_propertyItem release];
-    [super dealloc];
-}
+
 
 #pragma mark init
 - (instancetype)initWithUIExtensionsManager:(UIExtensionsManager*)extensionsManager readFrame:(ReadFrame*)readFrame
@@ -46,8 +42,8 @@
         _extensionsManager = extensionsManager;
         _pdfViewCtrl = extensionsManager.pdfViewCtrl;
         _readFrame = readFrame;
-        [_extensionsManager registerPropertyBarListener:self];
-
+        [_extensionsManager registerAnnotPropertyListener:self];
+        
         [self loadModule];
     }
     return self;
@@ -57,13 +53,13 @@
 {
     TbBaseItem *tyItem = [TbBaseItem createItemWithImage:[UIImage imageNamed:@"annot_line"] imageSelected:[UIImage imageNamed:@"annot_line"] imageDisable:[UIImage imageNamed:@"annot_line"]background:[UIImage imageNamed:@"annotation_toolitembg"]];
 
-        tyItem.onTapClick = ^(TbBaseItem* item)
+    tyItem.onTapClick = ^(TbBaseItem* item)
     {
         _annotType = e_annotLine;
         [self annotItemClicked];
         _isArrLine = NO;
     };
-
+    
     _readFrame.moreToolsBar.arrowsClicked = ^() {
         _annotType = e_annotLine;
        _isArrLine = YES;
@@ -93,7 +89,7 @@
         [_extensionsManager setCurrentToolHandler:toolHandler];
     }
     [_readFrame.toolSetBar removeAllItems];
-
+    
     TbBaseItem *doneItem = [TbBaseItem createItemWithImage:[UIImage imageNamed:@"annot_done"] imageSelected:[UIImage imageNamed:@"annot_done"] imageDisable:[UIImage imageNamed:@"annot_done"] background:[UIImage imageNamed:@"annotation_toolitembg"]];
     doneItem.tag = 0;
     [_readFrame.toolSetBar addItem:doneItem displayPosition:Position_CENTER];
@@ -102,8 +98,9 @@
         [_extensionsManager setCurrentToolHandler:nil];
         [_readFrame changeState:STATE_EDIT];
     };
-    [_extensionsManager registerPropertyBarListener:self];
-    self.propertyItem = [TbBaseItem createItemWithImage:[UIImage imageNamed:@"annotation_toolitembg"] imageSelected:[UIImage imageNamed:@"annotation_toolitembg"] imageDisable:[UIImage imageNamed:@"annotation_toolitembg"]];
+    [_extensionsManager registerAnnotPropertyListener:self];
+    TbBaseItem* propertyItem = [TbBaseItem createItemWithImage:[UIImage imageNamed:@"annotation_toolitembg"] imageSelected:[UIImage imageNamed:@"annotation_toolitembg"] imageDisable:[UIImage imageNamed:@"annotation_toolitembg"]];
+    self.propertyItem = propertyItem;
     self.propertyItem.tag = 1;
     [self.propertyItem setInsideCircleColor:[_extensionsManager getPropertyBarSettingColor:e_annotLine]];
     [_readFrame.toolSetBar addItem:_propertyItem displayPosition:Position_CENTER];
@@ -118,7 +115,7 @@
             [_extensionsManager showProperty:_annotType rect:item.contentView.bounds inView:item.contentView];
         }
     };
-
+    
     TbBaseItem *continueItem = nil;
     if (_readFrame.continueAddAnnot) {
         continueItem = [TbBaseItem createItemWithImage:[UIImage imageNamed:@"annot_continue"] imageSelected:[UIImage imageNamed:@"annot_continue"] imageDisable:[UIImage imageNamed:@"annot_continue"]background:[UIImage imageNamed:@"annotation_toolitembg"]];
@@ -150,7 +147,7 @@
         [Utility showAnnotationContinue:_readFrame.continueAddAnnot pdfViewCtrl:_extensionsManager.pdfViewCtrl siblingSubview:_readFrame.toolSetBar.contentView];
         [self performSelector:@selector(dismissAnnotationContinue) withObject:nil afterDelay:1];
     };
-
+    
     TbBaseItem *iconItem = [TbBaseItem createItemWithImage:[UIImage imageNamed:@"common_read_more"] imageSelected:[UIImage imageNamed:@"common_read_more"] imageDisable:[UIImage imageNamed:@"common_read_more"]background:[UIImage imageNamed:@"annotation_toolitembg"]];
     iconItem.tag = 4;
     [_readFrame.toolSetBar addItem:iconItem displayPosition:Position_CENTER];
@@ -172,31 +169,31 @@
         make.width.mas_equalTo(self.propertyItem.contentView.bounds.size.width);
         make.height.mas_equalTo(self.propertyItem.contentView.bounds.size.height);
     }];
-
+    
     [continueItem.contentView mas_makeConstraints:^(MASConstraintMaker *make) {
         make.bottom.mas_equalTo(continueItem.contentView.superview.mas_bottom).offset(-5);
         make.left.equalTo(self.propertyItem.contentView.superview.mas_centerX).offset(15);
         make.width.mas_equalTo(continueItem.contentView.bounds.size.width);
         make.height.mas_equalTo(continueItem.contentView.bounds.size.height);
-
+        
     }];
-
+    
     [doneItem.contentView mas_makeConstraints:^(MASConstraintMaker *make) {
         make.bottom.mas_equalTo(doneItem.contentView.superview.mas_bottom).offset(-5);
         make.right.equalTo(self.propertyItem.contentView.mas_left).offset(-30);
         make.width.mas_equalTo(doneItem.contentView.bounds.size.width);
         make.height.mas_equalTo(doneItem.contentView.bounds.size.height);
-
+        
     }];
-
+    
     [iconItem.contentView mas_makeConstraints:^(MASConstraintMaker *make) {
         make.bottom.mas_equalTo(iconItem.contentView.superview.mas_bottom).offset(-5);
         make.left.equalTo(continueItem.contentView.mas_right).offset(30);
         make.width.mas_equalTo(iconItem.contentView.bounds.size.width);
         make.height.mas_equalTo(iconItem.contentView.bounds.size.height);
-
+        
     }];
-
+    
 }
 
 -(void)dismissAnnotationContinue

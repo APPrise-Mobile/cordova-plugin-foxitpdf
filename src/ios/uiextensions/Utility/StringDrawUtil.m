@@ -1,15 +1,15 @@
 /**
- * Copyright (C) 2003-2016, Foxit Software Inc..
+ * Copyright (C) 2003-2017, Foxit Software Inc..
  * All Rights Reserved.
  *
  * http://www.foxitsoftware.com
  *
- * The following code is copyrighted and is the proprietary of Foxit Software Inc.. It is not allowed to 
- * distribute any parts of Foxit Mobile PDF SDK to third party or public without permission unless an agreement 
+ * The following code is copyrighted and is the proprietary of Foxit Software Inc.. It is not allowed to
+ * distribute any parts of Foxit Mobile PDF SDK to third party or public without permission unless an agreement
  * is signed between Foxit Software Inc. and customers to explicitly grant customers permissions.
  * Review legal.txt for additional license and legal information.
-
  */
+
 #import "StringDrawUtil.h"
 #import <CoreText/CoreText.h>
 
@@ -36,13 +36,7 @@
     return self;
 }
 
-- (void)dealloc
-{
-    [_previousStr release];
-    [_previousRetStr release];
-    
-    [super dealloc];
-}
+
 
 #pragma mark - functions
 
@@ -295,7 +289,7 @@
     {
         [array addObject:temp];
     }
-    return [[array retain] autorelease];
+    return array;
 }
 
 //remove the blank character between keyword which will make it cannot be found.
@@ -428,7 +422,7 @@
     //calculate the return value
     CTFontRef font = CTFontCreateWithName((CFStringRef)_font.fontName, _font.pointSize, NULL);
     NSMutableAttributedString *attributeStr = [[NSMutableAttributedString alloc] initWithString:str];
-    [attributeStr addAttribute:(id)kCTFontAttributeName value:(id)font range:NSMakeRange(0, str.length)];
+    [attributeStr addAttribute:(id)kCTFontAttributeName value:(__bridge id)font range:NSMakeRange(0, str.length)];
     CTFramesetterRef framesetter = CTFramesetterCreateWithAttributedString((CFAttributedStringRef)attributeStr);
     CGPathRef oneLinePath = CGPathCreateWithRect(CGRectMake(0, 0, width, self.singleLineHeight+5/*in big font size if exactly the same height one line can put nothing. expand a little.*/), NULL);
     long pos = 0;
@@ -438,35 +432,31 @@
         CTFrameRef oneLineFrame = CTFramesetterCreateFrame(framesetter, CFRangeMake(pos, 0), oneLinePath, NULL);
         CFIndex endPos = CTFrameGetVisibleStringRange(oneLineFrame).length;
         CFRelease(oneLineFrame);
-//        if (OS_ISVERSION9 && !DEVICE_iPHONE) {
-            for(long i = pos; i < [str length];i++){
-                NSString *newString = [str substringWithRange:NSMakeRange(pos,i - pos + 1)];
-                NSDictionary *attrs = @{NSFontAttributeName:_font};
-                CGSize textSize  = [newString boundingRectWithSize:CGSizeMake(width*2, self.singleLineHeight) options:NSStringDrawingUsesLineFragmentOrigin attributes:attrs context:nil].size;
-                if (textSize.width+2 >= width) {
-                    endPos = i;
-                    break;
-                    
-                }
-                else if ([[str substringWithRange:NSMakeRange(i, 1)] compare:@"\n"] == NSOrderedSame)
-                {
-                    endPos = i + 1;
-                    break;
-                }
-                else
-                {
-                    endPos = i;
-                }
-                if (i == [str length] - 1) {
-                    endPos++;
-                }
+
+        for(long i = pos; i < [str length];i++){
+            NSString *newString = [str substringWithRange:NSMakeRange(pos,i - pos + 1)];
+            NSDictionary *attrs = @{NSFontAttributeName:_font};
+            CGSize textSize  = [newString boundingRectWithSize:CGSizeMake(width*2, self.singleLineHeight) options:NSStringDrawingUsesLineFragmentOrigin attributes:attrs context:nil].size;
+            if (textSize.width+2 >= width) {
+                endPos = i;
+                break;
+                
             }
-            pos = endPos;
-//        }
-//        else
-//        {
-//            pos += MAX(1, endPos);
-//        }
+            else if ([[str substringWithRange:NSMakeRange(i, 1)] compare:@"\n"] == NSOrderedSame)
+            {
+                endPos = i + 1;
+                break;
+            }
+            else
+            {
+                endPos = i;
+            }
+            if (i == [str length] - 1) {
+                endPos++;
+            }
+        }
+        pos = endPos;
+
         if ([[str substringWithRange:NSMakeRange(pos-1, 1)] compare:@"\n"] != NSOrderedSame) //if user type return here, it's already return, so don't need to add
         {
             [insertRets addObject:[NSNumber numberWithLong:pos]];
@@ -476,8 +466,7 @@
 	CGPathRelease(oneLinePath);
 	CFRelease(framesetter);
 	CFRelease(font);
-	[attributeStr release];
-    NSMutableString *modifiedStr = [NSMutableString stringWithString:str];
+	    NSMutableString *modifiedStr = [NSMutableString stringWithString:str];
     if (insertRets.count > 0)
     {
         for (int i = 0; i < insertRets.count; i ++)

@@ -1,26 +1,26 @@
 /**
- * Copyright (C) 2003-2016, Foxit Software Inc..
+ * Copyright (C) 2003-2017, Foxit Software Inc..
  * All Rights Reserved.
  *
  * http://www.foxitsoftware.com
  *
- * The following code is copyrighted and is the proprietary of Foxit Software Inc.. It is not allowed to 
- * distribute any parts of Foxit Mobile PDF SDK to third party or public without permission unless an agreement 
+ * The following code is copyrighted and is the proprietary of Foxit Software Inc.. It is not allowed to
+ * distribute any parts of Foxit Mobile PDF SDK to third party or public without permission unless an agreement
  * is signed between Foxit Software Inc. and customers to explicitly grant customers permissions.
  * Review legal.txt for additional license and legal information.
-
  */
+
 #import "PropertyMainView.h"
 #import "PropertyBar.h"
 #import "ColorUtility.h"
 
 @interface PropertyMainView ()
 
-@property (nonatomic, retain) ColorLayout *currentColorLayout;
-@property (nonatomic, retain) OpacityLayout *currentOpacityLayout;
-@property (nonatomic, retain) LineWidthLayout *currentLineWidthLayout;
-@property (nonatomic, retain) FontLayout *currentFontLayout;
-@property (nonatomic, retain) IconLayout *currentIconLayout;
+@property (nonatomic, strong) ColorLayout *currentColorLayout;
+@property (nonatomic, strong) OpacityLayout *currentOpacityLayout;
+@property (nonatomic, strong) LineWidthLayout *currentLineWidthLayout;
+@property (nonatomic, strong) FontLayout *currentFontLayout;
+@property (nonatomic, strong) IconLayout *currentIconLayout;
 
 @end
 
@@ -141,7 +141,7 @@
         case TAB_TYPE:
         {
             if ([layout respondsToSelector:@selector(supportProperty)]) {
-                if ([(id)layout supportProperty] & PROPERTY_ICONTYPE) {
+                if ([(id)layout supportProperty] & PROPERTY_ICONTYPE || [(id)layout supportProperty] & PROPERTY_ATTACHMENT_ICONTYPE) {
                     self.currentIconLayout = (IconLayout*)layout;
                     CGRect typeFrame = layout.frame;
                     typeFrame.origin.y = TABHEIGHT;

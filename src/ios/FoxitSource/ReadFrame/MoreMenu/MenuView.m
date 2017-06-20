@@ -1,24 +1,24 @@
 /**
- * Copyright (C) 2003-2016, Foxit Software Inc..
+ * Copyright (C) 2003-2017, Foxit Software Inc..
  * All Rights Reserved.
  *
  * http://www.foxitsoftware.com
  *
- * The following code is copyrighted and is the proprietary of Foxit Software Inc.. It is not allowed to 
- * distribute any parts of Foxit Mobile PDF SDK to third party or public without permission unless an agreement 
+ * The following code is copyrighted and is the proprietary of Foxit Software Inc.. It is not allowed to
+ * distribute any parts of Foxit Mobile PDF SDK to third party or public without permission unless an agreement
  * is signed between Foxit Software Inc. and customers to explicitly grant customers permissions.
  * Review legal.txt for additional license and legal information.
-
  */
+
 #import "MenuView.h"
 #import "ReadFrame.h"
 
 @interface MenuView ()<UITableViewDelegate,UITableViewDataSource>
 
-@property(nonatomic,retain)UITableViewController *tableView;
-@property(nonatomic,retain)UINavigationController *navi;
-@property(nonatomic,retain)NSMutableDictionary *groupDic;
-@property(nonatomic,retain)NSMutableArray *groupTags;
+@property(nonatomic,strong)UITableViewController *tableView;
+@property(nonatomic,strong)UINavigationController *navi;
+@property(nonatomic,strong)NSMutableDictionary *groupDic;
+@property(nonatomic,strong)NSMutableArray *groupTags;
 @end
 
 
@@ -38,7 +38,7 @@
 		[cancelButton addTarget:self action:@selector(clickCancel) forControlEvents:UIControlEventTouchUpInside];
         [cancelButton setBackgroundImage:[UIImage imageNamed:@"common_back_black.png"] forState:UIControlStateNormal];
         cancelButton.frame = CGRectMake(10, 9, 26, 26);
-        self.navi = [[[UINavigationController alloc] initWithRootViewController:_tableView] autorelease];
+        self.navi = [[UINavigationController alloc] initWithRootViewController:_tableView];
         if (DEVICE_iPHONE)
         {
            [self.navi.navigationBar addSubview:cancelButton];
@@ -66,7 +66,6 @@
     self.groupDic = nil;
     self.groupTags = nil;
     self.navi = nil;
-    [super dealloc];
 }
 
 - (void)reloadData
@@ -183,12 +182,13 @@
 
 - (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath
 {
-    static NSString *cellIdentifier = @"cell";
-    UITableViewCell *cell = [[tableView dequeueReusableCellWithIdentifier:cellIdentifier] autorelease];
+    static NSString *cellIdentifier = @"readFrameMoreMenuTableCell";
+    UITableViewCell *cell = [tableView dequeueReusableCellWithIdentifier:cellIdentifier];
     if (cell == nil)
     {
         cell = [[UITableViewCell alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:cellIdentifier];
     }
+
     MenuGroup *group = [self.groupDic objectForKey:[self.groupTags objectAtIndex:indexPath.section]];
     MvMenuItem *item = [[group getItems] objectAtIndex:indexPath.row];
     cell.textLabel.text = item.text;

@@ -1,15 +1,15 @@
 /**
- * Copyright (C) 2003-2016, Foxit Software Inc..
+ * Copyright (C) 2003-2017, Foxit Software Inc..
  * All Rights Reserved.
  *
  * http://www.foxitsoftware.com
  *
- * The following code is copyrighted and is the proprietary of Foxit Software Inc.. It is not allowed to 
- * distribute any parts of Foxit Mobile PDF SDK to third party or public without permission unless an agreement 
+ * The following code is copyrighted and is the proprietary of Foxit Software Inc.. It is not allowed to
+ * distribute any parts of Foxit Mobile PDF SDK to third party or public without permission unless an agreement
  * is signed between Foxit Software Inc. and customers to explicitly grant customers permissions.
  * Review legal.txt for additional license and legal information.
-
  */
+
 #import <UIKit/UIKit.h>
 #import "AnnotationListMore.h"
 #import "UIExtensionsManager+Private.h"
@@ -242,6 +242,13 @@
                 self.replyBtRect = [replyCell convertRect:replyCell.detailButton.frame toView:replyCtr.view];
                 if (CGRectContainsPoint(_replyBtRect,point)) {
                     replyCtr.isShowMore = NO;
+                    //Already hidden.
+                    if(fabs(self.frame.origin.x - self.frame.size.width)<= 0.001)
+                    {
+                        [replyCell setEditViewHiden];
+                        return NO;
+                    }
+                    
                     [UIView animateWithDuration:0.3 animations:^{
                         self.frame = CGRectMake(self.frame.origin.x + self.frame.size.width, 0, self.frame.size.width, self.frame.size.height);
                         
@@ -303,6 +310,12 @@
                 {
                     
                     annotCtr.isShowMore = NO;
+                    //Already hidden.
+                    if(fabs(self.frame.origin.x - self.frame.size.width)<= 0.001)
+                    {
+                        [annotCell setEditViewHiden];
+                        return NO;
+                    }
                     [UIView animateWithDuration:0.3 animations:^{
                         self.frame = CGRectMake(self.frame.origin.x + self.frame.size.width, 0, self.frame.size.width, self.frame.size.height);
                         
@@ -333,7 +346,7 @@
         ReadingBookmarkListCell *viewList = (ReadingBookmarkListCell *)self.delegate;
         ReadingBookmarkViewController *bookmarkCtr = (ReadingBookmarkViewController *)viewList.delegate;
         CGPoint bookmarkCtrPoint = [touch locationInView:bookmarkCtr.view];
-        NSMutableArray *cellArrs = bookmarkCtr.tableView.visibleCells;
+        NSArray *cellArrs = bookmarkCtr.tableView.visibleCells;
         CGPoint point = [touch locationInView:_superView];
         CGRect renameRect = [self.renameButton.superview convertRect:self.renameButton.frame toView:_superView];
         CGRect deleteRect = [self.deleteButton.superview convertRect:self.deleteButton.frame toView:_superView];
@@ -392,16 +405,15 @@
     if ([annotationCell.delegate isKindOfClass:[AnnotationListViewController class]])
     {
         AnnotationListViewController *viewList = (AnnotationListViewController *)annotationCell.delegate;
-        if(!viewList.isShowMore)
-            return;
         viewList.isShowMore = NO;
     }else if ([annotationCell.delegate isKindOfClass:[ReplyTableViewController class]])
     {
         ReplyTableViewController *replyCtr = (ReplyTableViewController *)annotationCell.delegate;
-        if(!replyCtr.isShowMore)
-            return;
         replyCtr.isShowMore = NO;
     }
+    //Already hidden, do nothing.
+    if(fabs(self.frame.origin.x - self.frame.size.width)<= 0.001)
+        return;
     [UIView animateWithDuration:0.3 animations:^{
         self.frame = CGRectMake(self.frame.origin.x + self.frame.size.width, 0, self.frame.size.width, self.frame.size.height);
         
@@ -426,6 +438,10 @@
 {
     if (hidden)
     {
+        //Already hidden, do nothing.
+        if(fabs(self.frame.origin.x - self.frame.size.width)<= 0.001)
+            return;
+        
         if (menu) {
             [UIView animateWithDuration:0.3 animations:^{
                 self.frame = CGRectMake(self.frame.origin.x + self.frame.size.width, 0, self.frame.size.width, self.frame.size.height);
@@ -476,6 +492,10 @@
         }
     } else
     {
+        //Already visible, do nothing.
+        if(fabs(self.frame.origin.x)<= 0.001)
+            return;
+        
         if (menu) {
             [UIView animateWithDuration:0.3 animations:^{
                 self.frame = CGRectMake(self.frame.origin.x - self.frame.size.width, 0, self.frame.size.width, self.frame.size.height);

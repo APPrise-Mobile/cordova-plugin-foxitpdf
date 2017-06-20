@@ -1,15 +1,15 @@
 /**
- * Copyright (C) 2003-2016, Foxit Software Inc..
+ * Copyright (C) 2003-2017, Foxit Software Inc..
  * All Rights Reserved.
  *
  * http://www.foxitsoftware.com
  *
- * The following code is copyrighted and is the proprietary of Foxit Software Inc.. It is not allowed to 
- * distribute any parts of Foxit Mobile PDF SDK to third party or public without permission unless an agreement 
+ * The following code is copyrighted and is the proprietary of Foxit Software Inc.. It is not allowed to
+ * distribute any parts of Foxit Mobile PDF SDK to third party or public without permission unless an agreement
  * is signed between Foxit Software Inc. and customers to explicitly grant customers permissions.
  * Review legal.txt for additional license and legal information.
-
  */
+
 #import "AnnotationStruct.h"
 
 static AnnotationStruct* annostru=nil;
@@ -293,6 +293,10 @@ static BOOL isThreadRuning = NO;
         }
             break;
             
+        case e_annotFileAttachment:
+            resultString = @"panel_annotation_fileattachment.png";
+            break;
+            
         default:
             break;
     }
@@ -303,66 +307,65 @@ static BOOL isThreadRuning = NO;
 {
     getAnnotationFoundHandler = [getAnnotationFoundHandler copy];
     dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^
-                   {
-                       isThreadRuning = YES;
-                       needStopThread = NO;
+    {
+       isThreadRuning = YES;
+       needStopThread = NO;
+       
+       int totalPage = [_pdfViewControl.currentDoc getPageCount];
+       if (totalPage == 0)
+       {
+           if (getAnnotationFoundHandler)
+           {
+               dispatch_sync(dispatch_get_main_queue(), ^{
+                   getAnnotationFoundHandler(nil, 0, 0);
+               });
+           }
+       }
+       else
+       {
+           for (int i = 0; i < totalPage; i++)
+           {
+               if(needStopThread)
+               {
+                   cleanup();
+                   break ;
+               }
+               
+               if (getAnnotationFoundHandler)
+               {
+                   dispatch_sync(dispatch_get_main_queue(), ^{
                        
-                       int totalPage = [_pdfViewControl.currentDoc getPageCount];
-                       if (totalPage == 0)
+                       if(needStopThread)
+                           return ;
+                       
+                       FSPDFPage* page = [_pdfViewControl.currentDoc getPage:i];
+                       NSArray *array = [Utility getAnnots:page];
+                       NSMutableArray *itemArray = [NSMutableArray array];
+                       for (FSAnnot* annot in array)
                        {
-                           if (getAnnotationFoundHandler)
-                           {
-                               dispatch_sync(dispatch_get_main_queue(), ^{
-                                   getAnnotationFoundHandler(nil, 0, 0);
-                               });
+                           AnnotationItem *annoItem = [[AnnotationItem alloc] init];
+                           annoItem.annot = annot;
+                           if (annot.type != e_annotWidget &&
+                               (!(annot.type == e_annotStrikeOut && [Utility isReplaceText:(FSStrikeOut*)annot]))
+                               ) {
+                               //Callout,Textbox will be filtered out.
+                               if(annot.type == e_annotFreeText)
+                               {
+                                   NSString* intent = [((FSMarkup*)annot) getIntent];
+                                   if(!intent || [intent caseInsensitiveCompare:@"FreeTextTypeWriter"] != NSOrderedSame)
+                                       continue;
+                               }
+                               [itemArray addObject:annoItem];
                            }
                        }
-                       else
-                       {
-                           for (int i = 0; i < totalPage; i++)
-                           {
-                               if(needStopThread)
-                               {
-                                   cleanup();
-                                   break ;
-                               }
-                               
-                               if (getAnnotationFoundHandler)
-                               {
-                                   dispatch_sync(dispatch_get_main_queue(), ^{
-                                       
-                                       if(needStopThread)
-                                           return ;
-                                       
-                                       FSPDFPage* page = [_pdfViewControl.currentDoc getPage:i];
-                                       NSArray *array = [Utility getAnnots:page];
-                                       NSMutableArray *itemArray = [NSMutableArray array];
-                                       for (FSAnnot* annot in array)
-                                       {
-                                           AnnotationItem *annoItem = [[[AnnotationItem alloc] init] autorelease];
-                                           annoItem.annot = annot;
-                                           if (annot.type != e_annotWidget &&
-                                               (!(annot.type == e_annotStrikeOut && [Utility isReplaceText:(FSStrikeOut*)annot]))
-                                               ) {
-                                               //Callout,Textbox will be filtered out.
-                                               if(annot.type == e_annotFreeText)
-                                               {
-                                                   NSString* intent = [((FSMarkup*)annot) getIntent];
-                                                   if(!intent || [intent caseInsensitiveCompare:@"FreeTextTypeWriter"] != NSOrderedSame)
-                                                       continue;
-                                               }
-                                               [itemArray addObject:annoItem];
-                                           }
-                                       }
-                                       getAnnotationFoundHandler(itemArray, i, totalPage);
-                                   });
-                               }
-                           }
-                       }
-                       [getAnnotationFoundHandler release];
-                       needStopThread = NO;
-                       isThreadRuning = NO;
+                       getAnnotationFoundHandler(itemArray, i, totalPage);
                    });
+               }
+           }
+       }
+                              needStopThread = NO;
+       isThreadRuning = NO;
+    });
 }
 
 

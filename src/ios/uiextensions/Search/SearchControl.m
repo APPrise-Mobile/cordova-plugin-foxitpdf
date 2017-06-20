@@ -1,15 +1,15 @@
 /**
- * Copyright (C) 2003-2016, Foxit Software Inc..
+ * Copyright (C) 2003-2017, Foxit Software Inc..
  * All Rights Reserved.
  *
  * http://www.foxitsoftware.com
  *
- * The following code is copyrighted and is the proprietary of Foxit Software Inc.. It is not allowed to 
- * distribute any parts of Foxit Mobile PDF SDK to third party or public without permission unless an agreement 
+ * The following code is copyrighted and is the proprietary of Foxit Software Inc.. It is not allowed to
+ * distribute any parts of Foxit Mobile PDF SDK to third party or public without permission unless an agreement
  * is signed between Foxit Software Inc. and customers to explicitly grant customers permissions.
  * Review legal.txt for additional license and legal information.
-
  */
+
 #import <QuartzCore/QuartzCore.h>
 #import "RTLabel.h"
 #import <FoxitRDK/FSPDFObjC.h>
@@ -47,48 +47,49 @@ static TaskServer*  taskServer = nil;
 
 @interface SearchControl()
 
-@property (nonatomic, retain) TbBaseBar           *topBar;
-@property (nonatomic, retain) TbBaseItem          *filterItem;
-@property (nonatomic, retain) UISearchBar         *searchBar;
-@property (nonatomic, retain) TbBaseItem          *cancelItem;
+@property (nonatomic, weak) FSPDFViewCtrl               *pdfViewCtrl;
+@property (nonatomic, weak) UIExtensionsManager         *extensionsManager;
 
-@property (nonatomic, retain) TbBaseBar           *bottomBar;
-@property (nonatomic, retain) TbBaseItem          *previousItem;
-@property (nonatomic, retain) TbBaseItem          *nextItem;
-@property (nonatomic, retain) TbBaseItem          *showListItem;
+@property (nonatomic, strong) TbBaseBar           *topBar;
+@property (nonatomic, strong) TbBaseItem          *filterItem;
+@property (nonatomic, strong) UISearchBar         *searchBar;
+@property (nonatomic, strong) TbBaseItem          *cancelItem;
 
-@property (nonatomic, retain) UIControl           *maskView;
-@property (nonatomic, retain) UILabel             *foundLable;
-@property (nonatomic, retain) UIView             *totalView;
-@property (nonatomic, retain) UITableView         *tableView;
+@property (nonatomic, strong) TbBaseBar           *bottomBar;
+@property (nonatomic, strong) TbBaseItem          *previousItem;
+@property (nonatomic, strong) TbBaseItem          *nextItem;
+@property (nonatomic, strong) TbBaseItem          *showListItem;
+
+@property (nonatomic, strong) UIControl           *maskView;
+@property (nonatomic, strong) UILabel             *foundLable;
+@property (nonatomic, strong) UIView             *totalView;
+@property (nonatomic, strong) UITableView         *tableView;
 
 @property (nonatomic, assign) BOOL                topbarHidden;
 @property (nonatomic, assign) BOOL                bottomBarHidden;
 @property (nonatomic, assign) BOOL                tableviewHidden;
 @property (nonatomic, assign) BOOL                foundLabelHidden;
 
-@property (nonatomic, retain) NSMutableArray      *arraySearch;
+@property (nonatomic, strong) NSMutableArray      *arraySearch;
 
-@property (nonatomic, retain) UIPopoverController *searchbyPopoverCtrl;
+@property (nonatomic, strong) UIPopoverController *searchbyPopoverCtrl;
 
-@property (nonatomic, retain) NSOperationQueue    *searchOPQueue;
+@property (nonatomic, strong) NSOperationQueue    *searchOPQueue;
 
-//@property (nonatomic, assign) CGRect              needDrawRect;
-@property (nonatomic, retain) NSArray           *needDrawRects;
+@property (nonatomic, strong) NSArray           *needDrawRects;
 @property (nonatomic, assign) int                 needPageIndex;
 @property (nonatomic, assign) CGRect              cleanDrawRect;
 @property (nonatomic, assign) int                 cleanPageIndex;
 
-@property (nonatomic, retain) SearchInfo          *selectedSearchInfo;
-@property (nonatomic, retain) SearchResult        *selectedSearchResult;
+@property (nonatomic, strong) SearchInfo          *selectedSearchInfo;
+@property (nonatomic, strong) SearchResult        *selectedSearchResult;
 @property (nonatomic, assign) BOOL                isKeyboardShowing;
 
-@property (nonatomic, assign) UIExtensionsManager         *extensionsManager;
 @property (nonatomic, assign) BOOL                onSearchState;
 @end
 
 @implementation SearchControl {
-    FSPDFViewCtrl* _pdfViewCtrl;
+
 }
 
 - (instancetype)initWithPDFViewController:(FSPDFViewCtrl*)pdfViewCtrl extensionsManager:(UIExtensionsManager*)extensionsManager
@@ -101,7 +102,7 @@ static TaskServer*  taskServer = nil;
         taskServer = extensionsManager.taskServer;
         [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(willRotate) name:UIApplicationWillChangeStatusBarOrientationNotification object:nil];
     }
-    
+
     if ([UIBarButtonItem respondsToSelector:@selector(appearanceWhenContainedIn:)])
     {
         if (OS_ISVERSION7)
@@ -117,9 +118,7 @@ static TaskServer*  taskServer = nil;
 }
 
 - (void)dealloc{
-    [_totalView release];
-    [[NSNotificationCenter defaultCenter] removeObserver:self];
-    [super dealloc];
+        [[NSNotificationCenter defaultCenter] removeObserver:self];
 }
 
 -(void)load
@@ -128,18 +127,18 @@ static TaskServer*  taskServer = nil;
     [_pdfViewCtrl registerScrollViewEventListener:self];
     [_pdfViewCtrl registerGestureEventListener:self];
     [_pdfViewCtrl registerDocEventListener:self];
-   
+
     self.arraySearch = [NSMutableArray array];
-    self.searchOPQueue = [[[NSOperationQueue alloc] init] autorelease];
+    self.searchOPQueue = [[NSOperationQueue alloc] init];
     _selectedSearchInfo = nil;
     _selectedSearchResult = nil;
-    
-    
-    self.maskView = [[[UIControl alloc] initWithFrame:CGRectMake(0, 0, SCREENWIDTH, SCREENHEIGHT)] autorelease];
+
+
+    self.maskView = [[UIControl alloc] initWithFrame:CGRectMake(0, 0, SCREENWIDTH, SCREENHEIGHT)];
     self.maskView.autoresizingMask = UIViewAutoresizingFlexibleLeftMargin | UIViewAutoresizingFlexibleRightMargin | UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleTopMargin | UIViewAutoresizingFlexibleBottomMargin | UIViewAutoresizingFlexibleHeight;
-    
-    
-    self.topBar = [[[TbBaseBar alloc] init] autorelease];
+
+
+    self.topBar = [[TbBaseBar alloc] init];
     self.topBar.contentView.frame = CGRectMake(0, -64, SCREENWIDTH, 64);
     self.topBar.contentView.backgroundColor = [UIColor colorWithRGBHex:0xF2FAFAFA];
     self.topBar.top = YES;
@@ -150,35 +149,36 @@ static TaskServer*  taskServer = nil;
         make.right.equalTo(self.topBar.contentView.superview.mas_right).offset(0);
         make.height.mas_equalTo(64);
     }];
-    
+
+    __weak SearchControl* weakSelf = self;
     self.filterItem = [TbBaseItem createItemWithImage:[UIImage imageNamed:@"search_filter"] imageSelected:[UIImage imageNamed:@"search_filter"] imageDisable:[UIImage imageNamed:@"search_filter"]];
     self.filterItem.onTapClick = ^(TbBaseItem *item)
     {
-        if (self.searchbyPopoverCtrl.isPopoverVisible) {
-            [self.searchbyPopoverCtrl dismissPopoverAnimated:YES];
+        if (weakSelf.searchbyPopoverCtrl.isPopoverVisible) {
+            [weakSelf.searchbyPopoverCtrl dismissPopoverAnimated:YES];
         }
         else
         {
-            CGRect rect = [self.filterItem.contentView convertRect:self.filterItem.contentView.bounds toView:_pdfViewCtrl];
-            [self.searchbyPopoverCtrl presentPopoverFromRect:rect inView:_pdfViewCtrl permittedArrowDirections:UIPopoverArrowDirectionUp animated:YES];
+            CGRect rect = [weakSelf.filterItem.contentView convertRect:weakSelf.filterItem.contentView.bounds toView:weakSelf.pdfViewCtrl];
+            [weakSelf.searchbyPopoverCtrl presentPopoverFromRect:rect inView:weakSelf.pdfViewCtrl permittedArrowDirections:UIPopoverArrowDirectionUp animated:YES];
         }
     };
     if (!DEVICE_iPHONE) {
         [self.topBar addItem:self.filterItem displayPosition:Position_LT];
     }
-    
-    
+
+
     self.cancelItem = [TbBaseItem createItemWithTitle:NSLocalizedString(@"kCancel", nil)];
     self.cancelItem.textColor = [UIColor colorWithRed:0.15 green:0.62 blue:0.84 alpha:1];
     self.cancelItem.textFont = [UIFont systemFontOfSize:15.0f];
     [self.topBar addItem:self.cancelItem displayPosition:Position_RB];
     self.cancelItem.onTapClick = ^(TbBaseItem *item)
     {
-        [self cancelSearch];
+        [weakSelf cancelSearch];
     };
-    
+
     CGSize cancelSize = [Utility getTextSize:NSLocalizedString(@"kCancel", nil) fontSize:15.0f maxSize:CGSizeMake(200, 100)];
-    
+
     CGRect searchFrame;
     if (DEVICE_iPHONE)
     {
@@ -189,9 +189,9 @@ static TaskServer*  taskServer = nil;
         searchFrame = CGRectMake(46, 25, SCREENWIDTH - cancelSize.width - 5 - 65, 30);
     }
 
-    self.searchBar = [[[UISearchBar alloc] initWithFrame:searchFrame] autorelease];
+    self.searchBar = [[UISearchBar alloc] initWithFrame:searchFrame];
     self.searchBar.placeholder = @"Whitespace ignored!";
-    
+
     [self.topBar.contentView addSubview:self.searchBar];
     if (DEVICE_iPHONE) {
         [self.searchBar mas_makeConstraints:^(MASConstraintMaker *make) {
@@ -208,7 +208,7 @@ static TaskServer*  taskServer = nil;
             make.height.mas_equalTo(30);
         }];
     }
-   
+
     self.searchBar.delegate = self;
     if ([self.searchBar respondsToSelector:@selector(barTintColor)]) {
         UIImage *image = [UIImage imageNamed:@"search_edit_bg"];
@@ -221,8 +221,8 @@ static TaskServer*  taskServer = nil;
         [[self.searchBar.subviews objectAtIndex:0] removeFromSuperview];
         [self.searchBar setBackgroundColor:[UIColor clearColor]];
     }
-    
-    self.bottomBar = [[[TbBaseBar alloc] init] autorelease];
+
+    self.bottomBar = [[TbBaseBar alloc] init];
     self.bottomBar.contentView.backgroundColor = [UIColor colorWithRGBHex:0xF2FAFAFA];
     self.bottomBar.top = NO;
     self.bottomBar.contentView.frame = CGRectMake(0, SCREENHEIGHT, SCREENWIDTH, 49);
@@ -234,47 +234,53 @@ static TaskServer*  taskServer = nil;
         self.bottomBar.intervalWidth = 100;
     }
     [_pdfViewCtrl addSubview:self.bottomBar.contentView];
-    
+    [self.bottomBar.contentView mas_remakeConstraints:^(MASConstraintMaker *make) {
+        make.height.mas_equalTo(@49);
+        make.right.equalTo(self.bottomBar.contentView.superview.mas_right).offset(0);
+        make.left.equalTo(self.bottomBar.contentView.superview.mas_left).offset(0);
+        make.top.equalTo(self.bottomBar.contentView.superview.mas_bottom).offset(0);
+    }];
+
     self.previousItem = [TbBaseItem createItemWithImage:[UIImage imageNamed:@"search_previous"] imageSelected:[UIImage imageNamed:@"search_previous"] imageDisable:[UIImage imageNamed:@"search_previous_disable"]];
     self.previousItem.tag = 0;
     [self.bottomBar addItem:self.previousItem displayPosition:Position_CENTER];
     self.previousItem.onTapClick = ^(TbBaseItem *item)
     {
-        [self previousKeyLocation];
+        [weakSelf previousKeyLocation];
     };
-    
+
     self.showListItem = [TbBaseItem createItemWithImage:[UIImage imageNamed:@"search_showlist"] imageSelected:[UIImage imageNamed:@"search_showlist_selected"] imageDisable:[UIImage imageNamed:@"search_showlist_disable"]];
     self.showListItem.onTapClick = ^(TbBaseItem *item)
     {
-        [self setTableViewHidden:NO];
-        [self setfoundLabelHidden:NO];
-        [self setBottombarHidden:YES];
+        [weakSelf setTableViewHidden:NO];
+        [weakSelf setfoundLabelHidden:NO];
+        [weakSelf setBottombarHidden:YES];
     };
     [self.bottomBar addItem:self.showListItem displayPosition:Position_CENTER];
-    
+
     self.nextItem = [TbBaseItem createItemWithImage:[UIImage imageNamed:@"search_next"] imageSelected:[UIImage imageNamed:@"search_next"] imageDisable:[UIImage imageNamed:@"search_next_disable"]];
     [self.bottomBar addItem:self.nextItem displayPosition:Position_CENTER];
     self.nextItem.onTapClick = ^(TbBaseItem *item)
     {
-        [self nextKeyLocation];
+        [weakSelf nextKeyLocation];
     };
-   
-    self.foundLable = [[[UILabel alloc] initWithFrame:CGRectMake(STYLE_PAGE_SUMMARY_LEFT, 0, 300 , 30)] autorelease];
+
+    self.foundLable = [[UILabel alloc] initWithFrame:CGRectMake(STYLE_PAGE_SUMMARY_LEFT, 0, 300 , 30)];
     self.foundLable.autoresizingMask = UIViewAutoresizingFlexibleBottomMargin | UIViewAutoresizingFlexibleTopMargin |UIViewAutoresizingFlexibleHeight |UIViewAutoresizingFlexibleLeftMargin;
     self.foundLable.backgroundColor = [UIColor whiteColor];
     self.foundLable.textColor = [UIColor blackColor];
     self.foundLable.font = [UIFont systemFontOfSize:12.0f];
     self.foundLable.textAlignment = NSTextAlignmentLeft;
-    
-    self.totalView = [[[UIView alloc] initWithFrame:CGRectMake(0, 64, 300, 30)] autorelease];
+
+    self.totalView = [[UIView alloc] initWithFrame:CGRectMake(0, 64, 300, 30)];
     self.totalView.backgroundColor = [UIColor whiteColor];
-    
-    self.tableView = [[[UITableView alloc] initWithFrame:CGRectMake(SCREENWIDTH - 300, 94, 300, SCREENHEIGHT - 94) style:UITableViewStylePlain] autorelease];
+
+    self.tableView = [[UITableView alloc] initWithFrame:CGRectMake(SCREENWIDTH - 300, 94, 300, SCREENHEIGHT - 94) style:UITableViewStylePlain];
     self.tableView.separatorStyle = UITableViewCellSeparatorStyleSingleLine;
     if ([self.tableView respondsToSelector:@selector(setSeparatorInset:)]) {
         [self.tableView setSeparatorInset:UIEdgeInsetsMake(0,10,0,0)];
     }
-    
+
     self.tableView.delegate = self;
     self.tableView.dataSource = self;
     [_pdfViewCtrl addSubview:self.tableView];
@@ -292,16 +298,16 @@ static TaskServer*  taskServer = nil;
         make.left.equalTo(self.totalView.superview.mas_right).offset(0);
         make.width.mas_equalTo(@300);
     }];
-    
+
     self.topbarHidden = YES;
     self.bottomBarHidden = YES;
     self.tableviewHidden = YES;
     self.foundLabelHidden = YES;
-    
+
 }
 -(void)unload
 {
-    
+
 }
 
 -(void)willRotate
@@ -329,10 +335,7 @@ static TaskServer*  taskServer = nil;
         UIPopoverController *searchByPopoverCtrl = [[UIPopoverController alloc] initWithContentViewController:searchByNavCtrl];
         searchByPopoverCtrl.popoverContentSize = CGSizeMake(250, 86);
         self.searchbyPopoverCtrl = searchByPopoverCtrl;
-        [searchByPopoverCtrl release];
-        [searchByNavCtrl release];
-        [searchByCtr release];
-    }
+                            }
     return _searchbyPopoverCtrl;
 }
 
@@ -342,11 +345,11 @@ static TaskServer*  taskServer = nil;
     {
         [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(keyboardWasShown:) name:UIKeyboardDidShowNotification object:nil];
         [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(keyboardWasHidden:) name:UIKeyboardWillHideNotification object:nil];
-        
+
         [self setTopbarHidden:NO];
         [self.searchBar becomeFirstResponder];
         self.onSearchState = YES;
-        
+
         for (id<ISearchEventListener> listener in _extensionsManager.searchListeners) {
             if ([listener respondsToSelector:@selector(onSearchStarted)]) {
                 [listener onSearchStarted];
@@ -355,13 +358,13 @@ static TaskServer*  taskServer = nil;
     }
     else
     {
-        
         [self setTopbarHidden:YES];
+        [self.searchBar resignFirstResponder];
         [self setBottombarHidden:YES];
         [self setTableViewHidden:YES];
         [self setfoundLabelHidden:YES];
         self.onSearchState = NO;
-        
+
         for (id<ISearchEventListener> listener in _extensionsManager.searchListeners) {
             if ([listener respondsToSelector:@selector(onSearchCanceled)]) {
                 [listener onSearchCanceled];
@@ -376,13 +379,13 @@ static TaskServer*  taskServer = nil;
         return;
     }
     _topbarHidden = hidden;
-    
+
     if (hidden)
     {
         CGRect newFrame = self.topBar.contentView.frame;
         newFrame.origin.y = -self.topBar.contentView.frame.size.height;
         [UIView animateWithDuration:0.3 animations:^{
-            
+
             self.topBar.contentView.frame = newFrame;
             [self.topBar.contentView mas_remakeConstraints:^(MASConstraintMaker *make) {
                 make.top.equalTo(self.topBar.contentView.superview.mas_top).offset(-64);
@@ -390,7 +393,7 @@ static TaskServer*  taskServer = nil;
                 make.right.equalTo(self.topBar.contentView.superview.mas_right).offset(0);
                 make.height.mas_equalTo(64);
             }];
-            
+
         } completion:^(BOOL finished) {
         }];
     }
@@ -407,7 +410,7 @@ static TaskServer*  taskServer = nil;
                 make.height.mas_equalTo(64);
             }];
         } completion:^(BOOL finished) {
-            
+
         }];
     }
 }
@@ -481,11 +484,11 @@ static TaskServer*  taskServer = nil;
             }];
             [self.tableView layoutIfNeeded];
         }];
-        
+
         [UIView animateWithDuration:0.4 animations:^{
             self.maskView.alpha = 0.1f;
         } completion:^(BOOL finished) {
-            
+
             [self.maskView removeFromSuperview];
         }];
     }
@@ -567,6 +570,7 @@ static TaskServer*  taskServer = nil;
     {
         NSUInteger infoIndex = [self.selectedSearchResult.infos indexOfObject:self.selectedSearchInfo];
         if (infoIndex == 0) {
+            if (self.arraySearch.count < 1) return;
             NSUInteger resultIndex = [self.arraySearch indexOfObject:self.selectedSearchResult];
             if (resultIndex == 0) {
                 self.selectedSearchResult = [self.arraySearch lastObject];
@@ -583,7 +587,7 @@ static TaskServer*  taskServer = nil;
         }
         [self gotoPage:self.selectedSearchResult.index rects:self.selectedSearchInfo.rects];
     }
-    
+
 }
 
 - (void)nextKeyLocation
@@ -599,7 +603,7 @@ static TaskServer*  taskServer = nil;
             return;
         }
     }
-    
+
     if (_selectedSearchInfo == nil)
     {
         self.selectedSearchInfo = [self.selectedSearchResult.infos objectAtIndex:0];
@@ -610,6 +614,7 @@ static TaskServer*  taskServer = nil;
         NSUInteger infoIndex = [self.selectedSearchResult.infos indexOfObject:self.selectedSearchInfo];
         if (infoIndex == self.selectedSearchResult.infos.count - 1)
         {
+            if (self.arraySearch.count < 1) return;
             NSUInteger resultIndex = [self.arraySearch indexOfObject:self.selectedSearchResult];
             if (resultIndex == self.arraySearch.count - 1)
             {
@@ -627,14 +632,13 @@ static TaskServer*  taskServer = nil;
         }
         [self gotoPage:self.selectedSearchResult.index rects:self.selectedSearchInfo.rects];
     }
-    
 }
 
 - (void)gotoPage:(int)index rects:(NSArray*)rects
 {
     if ([self gotoPage:index animated:YES]) {
         if (rects && rects.count > 0) {
-            
+
             self.needDrawRects = rects;
             CGRect firstNeedDrawRect = [[rects objectAtIndex:0] CGRectValue];
             CGRect unionNeedDrawRect = CGRectZero;
@@ -644,24 +648,24 @@ static TaskServer*  taskServer = nil;
             }
             self.needPageIndex = index;
              if ([_pdfViewCtrl getPageLayoutMode] == PDF_LAYOUT_MODE_CONTINUOUS) {
-                 FSPointF* point = [[[FSPointF alloc] init] autorelease];
+                 FSPointF* point = [[FSPointF alloc] init];
                  [point set:CGRectGetMidX(firstNeedDrawRect) - 80 y:CGRectGetMidY(firstNeedDrawRect) + 150];
                  [_pdfViewCtrl gotoPage:index withDocPoint:point animated:YES];
              }
              else{
-                 FSPointF* point = [[[FSPointF alloc] init] autorelease];
+                 FSPointF* point = [[FSPointF alloc] init];
                  [point set:CGRectGetMidX(firstNeedDrawRect) y:CGRectGetMidY(firstNeedDrawRect)];
-                 
+
                  UIInterfaceOrientation orientation = [UIApplication sharedApplication].statusBarOrientation;
                  if (DEVICE_iPHONE && (orientation == UIInterfaceOrientationLandscapeLeft || orientation == UIInterfaceOrientationLandscapeRight))
                      {
                          //Avoid the search highlight to be sheltered from top bar. To do, need to check page rotation.
                          [point setY:[point getY] + 64];
                      }
-                 
+
                  [_pdfViewCtrl gotoPage:index withDocPoint:point animated:YES];
              }
-            
+
             FSRectF *docRectIva = [Utility CGRect2FSRectF:unionNeedDrawRect];
             FSRectF *oldRectIva = [Utility CGRect2FSRectF:self.cleanDrawRect];
             CGRect pvRectIna       = [_pdfViewCtrl convertPdfRectToPageViewRect:docRectIva pageIndex:self.needPageIndex];
@@ -698,7 +702,7 @@ static TaskServer*  taskServer = nil;
 {
     [self showSearchBar:NO];
     [self clearSearch];
-    
+
     FSRectF *oldRectIva = [Utility CGRect2FSRectF:self.cleanDrawRect];
     CGRect oldRect         = [_pdfViewCtrl convertPdfRectToPageViewRect:oldRectIva pageIndex:self.cleanPageIndex];
     [_pdfViewCtrl refresh:oldRect pageIndex:self.cleanPageIndex];
@@ -706,12 +710,12 @@ static TaskServer*  taskServer = nil;
     [self.searchBar resignFirstResponder];
     [[NSNotificationCenter defaultCenter] removeObserver:self name:UIKeyboardDidShowNotification object:nil];
     [[NSNotificationCenter defaultCenter] removeObserver:self name:UIKeyboardWillHideNotification object:nil];
-    
+
     //If there is still in searching, wait for finishing.
-    Task *task = [[[Task alloc] init] autorelease];
+    Task *task = [[Task alloc] init];
     task.run = ^()
     {
-        
+
     };
     [taskServer executeSync:task];
 }
@@ -725,19 +729,18 @@ static TaskServer*  taskServer = nil;
     if (pages == nil || pages.count == 0) {
         return;
     }
-    
+
     [self setTableViewHidden:NO];
     [self setfoundLabelHidden:NO];
     __block NSBlockOperation *op = [NSBlockOperation blockOperationWithBlock:^{
         dispatch_sync(dispatch_get_main_queue(), ^{
             [self searchStart];
         });
-        
+
         FSPDFTextSearch* fstextSearch = [FSPDFTextSearch create:_pdfViewCtrl.currentDoc pause:nil];
         [fstextSearch setFlag:e_searchNormal];
         [fstextSearch setKeyWords:str];
-        
-        [pages retain];
+
         for (int i = 0; i < pages.count; i++) {
             if (op.isCancelled) {
                 break;
@@ -751,8 +754,7 @@ static TaskServer*  taskServer = nil;
                         [self searchFound:ret];
                     });
                 }
-                [util release];
-                dispatch_sync(dispatch_get_main_queue(), ^{
+                                dispatch_sync(dispatch_get_main_queue(), ^{
                     [self searchOnePageProcessed];
                 });
             }
@@ -767,8 +769,7 @@ static TaskServer*  taskServer = nil;
                 self.nextItem.enable = NO;
             });
         }
-        [pages release];
-        dispatch_sync(dispatch_get_main_queue(), ^{
+                dispatch_sync(dispatch_get_main_queue(), ^{
             [self searchStoped];
         });
     }];
@@ -777,17 +778,17 @@ static TaskServer*  taskServer = nil;
 
 - (void)searchOnePageProcessed
 {
-    
+
 }
 
 - (void)searchStart
 {
-    
+
 }
 
 - (void)searchStoped
 {
-    
+
 }
 
 - (void)searchFound:(SearchResult*)result
@@ -807,6 +808,16 @@ static TaskServer*  taskServer = nil;
 
 - (NSString*)generateRText:(NSString*)content searchKeyword:(NSString*)keyword realLocation:(int)realIndex
 {
+    //Replace multi whitespace with one.
+    for (int index = 0; index<keyword.length; index++) {
+        if ([keyword characterAtIndex:index] == 32) {
+            int j = index;
+            for (; [keyword characterAtIndex:j] == 32; j++);
+            NSRange replaceWhitespace = {index, j-index};
+            keyword = [keyword stringByReplacingCharactersInRange:replaceWhitespace withString:@" "];
+        }
+    }
+
     NSArray *contentArray = [StringDrawUtil seperateString:content bySeparator:keyword];
     NSString *rtText = @"";
     int highlightIndex = 0;
@@ -839,7 +850,7 @@ static TaskServer*  taskServer = nil;
     if (SEARCH_BAR_TEXT.length > 0) {
         [self.searchBar resignFirstResponder];
         NSString *searchKey = SEARCH_BAR_TEXT;
-        
+
         NSMutableArray *pages = [NSMutableArray array];
         for (int i = 0; i < [_pdfViewCtrl.currentDoc getPageCount]; i++) {
             [pages addObject:[NSNumber numberWithInt:i]];
@@ -849,7 +860,7 @@ static TaskServer*  taskServer = nil;
         [self.arraySearch removeAllObjects];
         [self.tableView reloadData];
         self.foundLable.text = @"Searching...";
-        
+
         @try{
              [self searchTextInPDF:searchKey currentPage:pages];
         }
@@ -863,7 +874,7 @@ static TaskServer*  taskServer = nil;
                 return;
             }
         }
-        
+
         [self setBottombarHidden:YES];
     }
     else{
@@ -874,17 +885,17 @@ static TaskServer*  taskServer = nil;
 
 -(BOOL)searchBarShouldBeginEditing:(UISearchBar *)searchBar
 {
-    if (SEARCH_BAR_TEXT == nil || SEARCH_BAR_TEXT == 0) {
-        [self clearSearch];
-    }
+    //if (SEARCH_BAR_TEXT == nil || SEARCH_BAR_TEXT == 0) {
+    //    [self clearSearch];
+    //}
     return YES;
 }
 
 -(void)searchBarTextDidEndEditing:(UISearchBar *)searchBar
 {
-    if (SEARCH_BAR_TEXT == nil || SEARCH_BAR_TEXT.length == 0) {
-        [self clearSearch];
-    }
+    //if (SEARCH_BAR_TEXT == nil || SEARCH_BAR_TEXT.length == 0) {
+    //    [self clearSearch];
+    //}
 }
 
 #pragma mark - Table view data source
@@ -909,7 +920,7 @@ static TaskServer*  taskServer = nil;
 
 - (CGFloat)tableView:(UITableView *)tableView heightForRowAtIndexPath:(NSIndexPath *)indexPath
 {
-    
+
     SearchResult *oneResult = [self.arraySearch objectAtIndex:indexPath.section];
     if(indexPath.row == 0)  //page summary
     {
@@ -928,7 +939,6 @@ static TaskServer*  taskServer = nil;
             [label setParagraphReplacement:@""];
             [label setText:oneInfo.rtText];
             oneInfo.rtHeight = label.optimumSize.height;
-            [label release];
         }
         return oneInfo.rtHeight + 2*STYLE_INFO_TOP;
     }
@@ -937,24 +947,24 @@ static TaskServer*  taskServer = nil;
 
 - (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath
 {
-    
+
     if ( indexPath.row == 0)  //page summary or show total match count
     {
         static NSString *CellIdentifier = @"PageSummaryCellIdentifier";
         UITableViewCell *cell = [tableView dequeueReusableCellWithIdentifier:CellIdentifier];
         if (cell == nil)
         {
-            cell = [[[UITableViewCell alloc] initWithStyle:UITableViewCellStyleValue2 reuseIdentifier:CellIdentifier] autorelease];
+            cell = [[UITableViewCell alloc] initWithStyle:UITableViewCellStyleValue2 reuseIdentifier:CellIdentifier];
             cell.backgroundColor = [UIColor whiteColor];
-            
-            UILabel *labelLeft = [[[UILabel alloc] initWithFrame:CGRectMake(STYLE_PAGE_SUMMARY_LEFT, STYLE_PAGE_SUMMARY_TOP, STYLE_PAGE_SUMMARY_WIDTH, STYLE_PAGE_SUMMARY_LABEL_HEIGHT)] autorelease];
+
+            UILabel *labelLeft = [[UILabel alloc] initWithFrame:CGRectMake(STYLE_PAGE_SUMMARY_LEFT, STYLE_PAGE_SUMMARY_TOP, STYLE_PAGE_SUMMARY_WIDTH, STYLE_PAGE_SUMMARY_LABEL_HEIGHT)];
             labelLeft.textAlignment = NSTextAlignmentLeft;
             labelLeft.font = [UIFont systemFontOfSize:12];//STYLE_PAGE_SUMMARY_FONT;
             labelLeft.textColor = [UIColor colorWithRGBHex:0x5c5c5c];
             labelLeft.backgroundColor = [UIColor clearColor];
             [cell.contentView addSubview:labelLeft];
-            UILabel *labelRight = [[[UILabel alloc] initWithFrame:CGRectMake((DEVICE_iPHONE ? STYLE_PAGE_SUMMARY_RIGHT_LEFT_IPHONE : STYLE_PAGE_SUMMARY_RIGHT_LEFT), STYLE_PAGE_SUMMARY_TOP,
-                                                                             (DEVICE_iPHONE ? STYLE_PAGE_SUMMARY_WIDTH_IPHONE : STYLE_PAGE_SUMMARY_WIDTH), STYLE_PAGE_SUMMARY_LABEL_HEIGHT)] autorelease];
+            UILabel *labelRight = [[UILabel alloc] initWithFrame:CGRectMake((DEVICE_iPHONE ? STYLE_PAGE_SUMMARY_RIGHT_LEFT_IPHONE : STYLE_PAGE_SUMMARY_RIGHT_LEFT), STYLE_PAGE_SUMMARY_TOP,
+                                                                             (DEVICE_iPHONE ? STYLE_PAGE_SUMMARY_WIDTH_IPHONE : STYLE_PAGE_SUMMARY_WIDTH), STYLE_PAGE_SUMMARY_LABEL_HEIGHT)];
             labelRight.textAlignment = NSTextAlignmentRight;
             labelRight.autoresizingMask = UIViewAutoresizingFlexibleWidth;
             labelRight.font = [UIFont systemFontOfSize:12];
@@ -967,7 +977,7 @@ static TaskServer*  taskServer = nil;
         SearchResult *oneResult = [self.arraySearch objectAtIndex:indexPath.section];
         labelLeft.text = [NSString stringWithFormat:@"%@ %d", NSLocalizedString(@"kPage", nil), oneResult.index + 1/*page index start from 0*/];
         labelRight.text = [NSString stringWithFormat:@"%lu", (unsigned long)oneResult.infos.count];
-        
+
         return cell;
     }
     else
@@ -978,15 +988,15 @@ static TaskServer*  taskServer = nil;
         UITableViewCell *cell = [tableView dequeueReusableCellWithIdentifier:CellIdentifier];
         if (cell == nil)
         {
-            cell = [[[UITableViewCell alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:CellIdentifier] autorelease];
+            cell = [[UITableViewCell alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:CellIdentifier];
             cell.backgroundColor = [UIColor colorWithWhite:1.0 alpha:0.8];
-            RTLabel *labelContent = [[[RTLabel alloc] initWithFrame:CGRectMake(STYLE_INFO_LEFT, STYLE_INFO_TOP, 300 - STYLE_INFO_LEFT , 10/*will be adjust later*/)] autorelease];
+            RTLabel *labelContent = [[RTLabel alloc] initWithFrame:CGRectMake(STYLE_INFO_LEFT, STYLE_INFO_TOP, 300 - STYLE_INFO_LEFT , 10/*will be adjust later*/)];
             labelContent.backgroundColor = [UIColor clearColor];
             [cell.contentView addSubview:labelContent];
         }
         RTLabel *labelContent = [cell.contentView.subviews objectAtIndex:0];
         SearchResult *oneResult = [self.arraySearch objectAtIndex: indexPath.section];
-        
+
         SearchInfo *oneInfo = [oneResult.infos objectAtIndex: indexPath.row-1];
         if(oneInfo.rtText.length == 0)
         {
@@ -1016,28 +1026,28 @@ static TaskServer*  taskServer = nil;
                 CGRect rect = [obj CGRectValue];
                 unionNeedDrawRect = CGRectUnion(unionNeedDrawRect, rect);
             }
-            
+
             self.needPageIndex = oneResult.index;
-            
+
             if ([_pdfViewCtrl getPageLayoutMode] == PDF_LAYOUT_MODE_CONTINUOUS) {
-                FSPointF* point = [[[FSPointF alloc] init] autorelease];
+                FSPointF* point = [[FSPointF alloc] init];
                 [point set:CGRectGetMidX(firstNeedDrawRect) - 80 y:CGRectGetMidY(firstNeedDrawRect) + 150];
                 [_pdfViewCtrl gotoPage:oneResult.index withDocPoint:point animated:YES];
             }
             else
             {
-                FSPointF* point = [[[FSPointF alloc] init] autorelease];
+                FSPointF* point = [[FSPointF alloc] init];
                 [point set:CGRectGetMidX(firstNeedDrawRect) y:CGRectGetMidY(firstNeedDrawRect)];
                [_pdfViewCtrl gotoPage:oneResult.index withDocPoint:point animated:YES];
             }
-           
+
             FSRectF *docRectIva = [Utility CGRect2FSRectF:unionNeedDrawRect];
             FSRectF *oldRectIva = [Utility CGRect2FSRectF:self.cleanDrawRect];
             CGRect pvRectIna       = [_pdfViewCtrl convertPdfRectToPageViewRect:docRectIva pageIndex:self.needPageIndex];
             CGRect oldRect         = [_pdfViewCtrl convertPdfRectToPageViewRect:oldRectIva pageIndex:self.cleanPageIndex];
             [_pdfViewCtrl refresh:pvRectIna pageIndex:self.needPageIndex];
             [_pdfViewCtrl refresh:oldRect pageIndex:self.cleanPageIndex];
-            
+
             self.cleanDrawRect = unionNeedDrawRect;
             self.cleanPageIndex = oneResult.index;
             [self setTableViewHidden:YES];
@@ -1080,7 +1090,7 @@ static TaskServer*  taskServer = nil;
 
 - (BOOL)onLongPress:(UILongPressGestureRecognizer *)recognizer
 {
-    
+
     if (self.onSearchState) {
         if (_isKeyboardShowing) {
             [self.searchBar resignFirstResponder];
@@ -1105,10 +1115,10 @@ static TaskServer*  taskServer = nil;
 
 #pragma mark -- IDocEventListener
 - (void)onDocWillOpen{
-    
+
 }
 - (void)onDocOpened:(FSPDFDoc*)document error:(int)error{
-    
+
 }
 - (void)onDocWillClose:(FSPDFDoc*)document{
     if (!DEVICE_iPHONE && self.searchbyPopoverCtrl.isPopoverVisible) {
@@ -1117,27 +1127,27 @@ static TaskServer*  taskServer = nil;
     [self cancelSearch];
 }
 - (void)onDocClosed:(FSPDFDoc*)document error:(int)error{
-    
+
 }
 - (void)onDocWillSave:(FSPDFDoc*)document{
-    
+
 }
 @end
 
 static SearchResult* searchPage(FSPDFTextSearch* fstextSearch, FSPDFPage* page, NSString* keyword, StringDrawUtil* util, float width)
 {
-    __block SearchResult *result = [[[SearchResult alloc] init] autorelease];
+    __block SearchResult *result = [[SearchResult alloc] init];
     result.index = [page getIndex];
     result.infos = [NSMutableArray array];
     __block int count = 0;
-    
-    Task *task = [[[Task alloc] init] autorelease];
+
+    Task *task = [[Task alloc] init];
     task.run = ^(){
         if (!page)
         {
             return;
         }
-        
+
         BOOL parseSuccess = YES;
         enum FS_PROGRESSSTATE state = [page startParse:e_parsePageTextOnly pause:nil isReparse:NO];
         if (e_progressError == state)
@@ -1159,7 +1169,7 @@ static SearchResult* searchPage(FSPDFTextSearch* fstextSearch, FSPDFPage* page, 
         {
             return;
         }
-        
+
         FSPDFTextSelect* fstextPage = [FSPDFTextSelect create:page];
         if (fstextPage)
         {
@@ -1264,7 +1274,7 @@ static SearchResult* searchPage(FSPDFTextSearch* fstextSearch, FSPDFPage* page, 
                                     break;
                                 }
                             }
-                            
+
                             int lineNumber;
                             if(previousFoundRange.length > 0)
                             {
@@ -1300,10 +1310,9 @@ static SearchResult* searchPage(FSPDFTextSearch* fstextSearch, FSPDFPage* page, 
                             //@#$ may need rotation here
                             [info.rects addObject:[NSValue valueWithCGRect:[Utility FSRectF2CGRect:fsrect]]];
                         }
-                        
+
                         [result.infos addObject:info];
-                        [info release];
-                        
+
                         isFind = [fstextSearch findNext];
                     }
                 }

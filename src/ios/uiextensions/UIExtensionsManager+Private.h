@@ -1,15 +1,15 @@
 /**
- * Copyright (C) 2003-2016, Foxit Software Inc..
+ * Copyright (C) 2003-2017, Foxit Software Inc..
  * All Rights Reserved.
  *
  * http://www.foxitsoftware.com
  *
- * The following code is copyrighted and is the proprietary of Foxit Software Inc.. It is not allowed to 
- * distribute any parts of Foxit Mobile PDF SDK to third party or public without permission unless an agreement 
+ * The following code is copyrighted and is the proprietary of Foxit Software Inc.. It is not allowed to
+ * distribute any parts of Foxit Mobile PDF SDK to third party or public without permission unless an agreement
  * is signed between Foxit Software Inc. and customers to explicitly grant customers permissions.
  * Review legal.txt for additional license and legal information.
-
  */
+
 #ifndef UIExtensionsManager_Private_h
 #define UIExtensionsManager_Private_h
 #import <UIKit/UIKit.h>
@@ -31,22 +31,23 @@
 
 /** @brief Private implementation for extension manager, these properites and methods are not supposed to be called. */
 @interface UIExtensionsManager() <IDrawEventListener, IPropertyValueChangedListener, IGestureEventListener>
-@property (nonatomic, retain) id<IToolHandler> currentToolHandler;
-@property (nonatomic, retain) NSMutableArray *annotListeners;
-@property (nonatomic, retain) NSMutableArray *toolListeners;
-@property (nonatomic, retain) NSMutableArray *searchListeners;
-@property (nonatomic, retain) NSMutableArray *toolHandlers;
-@property (nonatomic, retain) NSMutableArray *annotHandlers;
+@property (nonatomic, strong) id<IToolHandler> currentToolHandler;
+@property (nonatomic, strong) NSMutableArray *annotListeners;
+@property (nonatomic, strong) NSMutableArray *toolListeners;
+@property (nonatomic, strong) NSMutableArray *searchListeners;
+@property (nonatomic, strong) NSMutableArray *toolHandlers;
+@property (nonatomic, strong) NSMutableArray *annotHandlers;
 @property (nonatomic, assign) int noteIcon;
+@property (nonatomic, assign) int attachmentIcon;
 @property (nonatomic, assign) int eraserLineWidth;
 @property (nonatomic, assign) int stampIcon;
-@property (nonatomic, retain) PropertyBar* propertyBar;
-@property (nonatomic, retain) SearchControl* searchControl;
-@property (nonatomic, retain) TaskServer* taskServer;
-@property (nonatomic, retain) MenuControl* menuControl;
+@property (nonatomic, strong) PropertyBar* propertyBar;
+@property (nonatomic, strong) SearchControl* searchControl;
+@property (nonatomic, strong) TaskServer* taskServer;
+@property (nonatomic, strong) MenuControl* menuControl;
 
-@property (nonatomic, retain) ExAnnotIconProviderCallback* iconProvider;
-@property (nonatomic, retain) ExActionHandler* actionHandler;
+@property (nonatomic, strong) ExAnnotIconProviderCallback* iconProvider;
+@property (nonatomic, strong) ExActionHandler* actionHandler;
 
 - (void)setCurrentAnnot:(FSAnnot*)anot;
 -(unsigned int)getAnnotColor:(enum FS_ANNOTTYPE)annotType;
@@ -60,6 +61,7 @@
 -(NSString*)getAnnotFontName:(enum FS_ANNOTTYPE)annotType;
 -(void)setAnnotFontName:(NSString*)fontName annotType:(enum FS_ANNOTTYPE)annotType;
 -(int)filterAnnotType:(enum FS_ANNOTTYPE)annotType;
+-(id<IAnnotHandler>)getAnnotHandlerByAnnot:(FSAnnot*)annot;
 
 -(void)registerRotateChangedListener:(id<IRotationEventListener>)listener;
 -(void)unregisterRotateChangedListener:(id<IRotationEventListener>)listener;
@@ -69,19 +71,18 @@
 @end
 
 @interface ExAnnotIconProviderCallback : FSAnnotIconProviderCallback
--(void)release;
 -(NSString *)getProviderID;
 -(NSString *)getProviderVersion;
 -(BOOL)hasIcon: (enum FS_ANNOTTYPE)annotType iconName: (NSString *)iconName;
 -(BOOL)canChangeColor: (enum FS_ANNOTTYPE)annotType iconName: (NSString *)iconName;
 -(FSPDFPage*)getIcon: (enum FS_ANNOTTYPE)annotType iconName: (NSString *)iconName color: (unsigned int)color;
--(FSShadingColor*)getShadingColor: (enum FS_ANNOTTYPE)annotType iconName: (NSString *)iconName refColor: (unsigned long)refColor shadingIndex: (int)shadingIndex;
+-(FSShadingColor*)getShadingColor: (enum FS_ANNOTTYPE)annotType iconName: (NSString *)iconName refColor: (unsigned int)refColor shadingIndex: (int)shadingIndex;
 -(NSNumber*)getDisplayWidth: (enum FS_ANNOTTYPE)annotType iconName: (NSString *)iconName;
 -(NSNumber*)getDisplayHeight: (enum FS_ANNOTTYPE)annotType iconName: (NSString *)iconName;
 @end
 
 @interface ExActionHandler : FSActionHandler
-@property (nonatomic, retain) FSPDFViewCtrl* pdfViewCtrl;
+@property (nonatomic, strong) FSPDFViewCtrl* pdfViewCtrl;
 
 - (id)initWithPDFViewControl:(FSPDFViewCtrl*)viewctrl;
 -(int)getCurrentPage:(FSPDFDoc*)pdfDoc;

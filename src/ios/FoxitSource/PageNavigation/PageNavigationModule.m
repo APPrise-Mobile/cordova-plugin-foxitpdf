@@ -1,35 +1,35 @@
 /**
- * Copyright (C) 2003-2016, Foxit Software Inc..
+ * Copyright (C) 2003-2017, Foxit Software Inc..
  * All Rights Reserved.
  *
  * http://www.foxitsoftware.com
  *
- * The following code is copyrighted and is the proprietary of Foxit Software Inc.. It is not allowed to 
- * distribute any parts of Foxit Mobile PDF SDK to third party or public without permission unless an agreement 
+ * The following code is copyrighted and is the proprietary of Foxit Software Inc.. It is not allowed to
+ * distribute any parts of Foxit Mobile PDF SDK to third party or public without permission unless an agreement
  * is signed between Foxit Software Inc. and customers to explicitly grant customers permissions.
  * Review legal.txt for additional license and legal information.
-
  */
+
 #import "PageNavigationModule.h"
-#import "AppDelegate.h"
+#import "FoxitPdf.h"
 #import <QuartzCore/QuartzCore.h>
 #import "ReadFrame.h"
-#import "Defines.h"
 
 @interface PageNavigationModule() {
-    FSPDFViewCtrl* _pdfViewCtrl;
-    ReadFrame* _readFrame;
-    UIExtensionsManager* _extensionsManager;
+    FSPDFViewCtrl* __weak _pdfViewCtrl;
+    ReadFrame* __weak _readFrame;
+    UIExtensionsManager* __weak _extensionsManager;
+    int _oldReadFrameState;
 }
 
-@property (retain, nonatomic) UIToolbar *gotoPageToolbar;
-@property (retain, nonatomic) UITextField *pageNumBar;
-@property (retain, nonatomic) UIButton *goBtn;
+@property (strong, nonatomic) UIToolbar *gotoPageToolbar;
+@property (strong, nonatomic) UITextField *pageNumBar;
+@property (strong, nonatomic) UIButton *goBtn;
 
-@property (retain, nonatomic) UIView *pageNumView;
-@property (retain, nonatomic) UILabel *totalNumLabel;
-@property (retain, nonatomic) UIImageView *prevImage;
-@property (retain, nonatomic) UIImageView *nextImage;
+@property (strong, nonatomic) UIView *pageNumView;
+@property (strong, nonatomic) UILabel *totalNumLabel;
+@property (strong, nonatomic) UIImageView *prevImage;
+@property (strong, nonatomic) UIImageView *nextImage;
 @property (assign, nonatomic) BOOL gotoToolbarShouldShow;
 
 @property (nonatomic, assign) BOOL isFullScreen;
@@ -48,38 +48,29 @@
 		[self initSubViews];
         self.gotoToolbarShouldShow = NO;
         [self loadModule];
+        _oldReadFrameState = STATE_NORMAL;
 	}
 	return self;
 }
 
-- (void)dealloc
-{
-	[_gotoPageToolbar release];
-	[_pageNumBar release];
-	[_goBtn release];
-	[_pageNumView release];
-	[_totalNumLabel release];
-	[_prevImage release];
-	[_nextImage release];
-	[super dealloc];
-}
+
 
 - (void)initSubViews {
-	self.totalNumLabel = [[[UILabel alloc] init] autorelease];
+	self.totalNumLabel = [[UILabel alloc] init];
 	self.totalNumLabel.userInteractionEnabled = YES;
-	[self.totalNumLabel addGestureRecognizer:[[[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(showGotoPageToolbar:)] autorelease]];
-	
-	self.prevImage = [[[UIImageView alloc] init] autorelease];
+	[self.totalNumLabel addGestureRecognizer:[[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(showGotoPageToolbar:)]];
+
+	self.prevImage = [[UIImageView alloc] init];
 	self.prevImage.image = [UIImage imageNamed:@"goto_page_jump_prev"];
 	self.prevImage.userInteractionEnabled = YES;
-	[self.prevImage addGestureRecognizer:[[[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(handleGotoPrevView:)] autorelease]];
-	
-	self.nextImage = [[[UIImageView alloc] init] autorelease];
+	[self.prevImage addGestureRecognizer:[[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(handleGotoPrevView:)]];
+
+	self.nextImage = [[UIImageView alloc] init];
 	self.nextImage.image = [UIImage imageNamed:@"goto_page_jump_next"];
 	self.nextImage.userInteractionEnabled = YES;
-	[self.nextImage addGestureRecognizer:[[[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(handleGotoNextView:)] autorelease]];
-	
-	self.pageNumView = [[[UIView alloc] init] autorelease];
+	[self.nextImage addGestureRecognizer:[[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(handleGotoNextView:)]];
+
+	self.pageNumView = [[UIView alloc] init];
 	[self.pageNumView addSubview:self.totalNumLabel];
 	[self.pageNumView addSubview:self.prevImage];
 	[self.pageNumView addSubview:self.nextImage];
@@ -88,10 +79,10 @@
 - (void)addPageNumberView
 {
 	CGRect frame = [UIScreen mainScreen].bounds;
-	
+
 	self.prevImage.hidden = YES;
 	self.nextImage.hidden = YES;
-	
+
 	if (DEVICE_iPHONE) {
 		self.pageNumView.frame = CGRectMake(15, frame.size.height - 93, 50, 34);
 		self.pageNumView.backgroundColor = [UIColor colorWithWhite:0.0 alpha:0.425];
@@ -105,7 +96,10 @@
 }
 
 - (void)removePageNumberView {
-	[self.pageNumView removeFromSuperview];
+    UIView* pageNumView = self.pageNumView;
+    dispatch_async(dispatch_get_main_queue(), ^{
+        [pageNumView removeFromSuperview];
+    });
 }
 
 - (NSString*)getDisplayPageLabel:(int)pageIndex needTotal:(BOOL)needTotal {
@@ -121,7 +115,7 @@
     } else {
         ret = [NSString stringWithFormat:@"%d", pageIndex + 1];
     }
-    
+
     if (needTotal) {
         ret = [NSString stringWithFormat:@"%@/%d", ret, pageCount];
     }
@@ -137,30 +131,28 @@
 		_gotoPageToolbar.backgroundColor = [UIColor colorWithRGBHex:0xF2FAFAFA];
 		_gotoPageToolbar.hidden = YES;
 		_gotoPageToolbar.autoresizingMask = UIViewAutoresizingFlexibleLeftMargin | UIViewAutoresizingFlexibleRightMargin | UIViewAutoresizingFlexibleWidth;
-		
-		self.goBtn = [[[UIButton alloc] init] autorelease];
+
+		self.goBtn = [[UIButton alloc] init];
 		self.goBtn.titleLabel.font = [UIFont systemFontOfSize:15];
 		self.goBtn.titleLabel.textAlignment = NSTextAlignmentCenter;
 		[self.goBtn setTitle:@"Go" forState:UIControlStateNormal];
 		[self.goBtn setTitleColor:[UIColor colorWithRGBHex:0x179cd8] forState:UIControlStateNormal];
 		[self.goBtn setTitleColor:[UIColor colorWithRGBHex:0xF2FAFAFA] forState:UIControlStateHighlighted | UIControlStateDisabled | UIControlStateSelected | UIControlStateApplication | UIControlStateReserved];
-		CGSize sizeName = [self.goBtn.titleLabel.text sizeWithFont:self.goBtn.titleLabel.font constrainedToSize:CGSizeMake(MAXFLOAT, 0.0) lineBreakMode:NSLineBreakByWordWrapping];
-		self.goBtn.frame = CGRectMake(frame.size.width - 10 - sizeName.width, (44 - sizeName.height)/2, sizeName.width, sizeName.height);
 		self.goBtn.autoresizingMask = UIViewAutoresizingFlexibleLeftMargin | UIViewAutoresizingFlexibleRightMargin | UIViewAutoresizingFlexibleWidth;
 		[self.goBtn addTarget:self action:@selector(goAction) forControlEvents:UIControlEventTouchUpInside];
-        
-		self.pageNumBar = [[[UITextField alloc] initWithFrame:CGRectMake(10, 8, (int)self.goBtn.frame.origin.x - 20, 30)] autorelease];
+
+		self.pageNumBar = [[UITextField alloc] initWithFrame:CGRectMake(10, 8, (int)self.goBtn.frame.origin.x - 20, 30)];
 		self.pageNumBar.keyboardType = UIKeyboardTypeNumberPad;
 		self.pageNumBar.autoresizingMask = UIViewAutoresizingFlexibleLeftMargin | UIViewAutoresizingFlexibleRightMargin | UIViewAutoresizingFlexibleWidth;
 		self.pageNumBar.borderStyle = UITextBorderStyleRoundedRect;
 		self.pageNumBar.layer.borderColor = [UIColor colorWithRGBHex:0x179cdb].CGColor;
 		self.pageNumBar.layer.borderWidth= 1.0f;
 		self.pageNumBar.layer.cornerRadius=4.0f;
-		
+
 		[_gotoPageToolbar addSubview:self.goBtn];
 		[_gotoPageToolbar addSubview:self.pageNumBar];
-        
-        UIView *divideView = [[[UIView alloc] init] autorelease];
+
+        UIView *divideView = [[UIView alloc] init];
         divideView.backgroundColor = [UIColor colorWithRGBHex:0x949494];
         divideView.frame = CGRectMake(0, 44 -  [Utility realPX:1.0f], SCREENWIDTH, [Utility realPX:1.0f]);
         divideView.autoresizingMask = UIViewAutoresizingFlexibleLeftMargin | UIViewAutoresizingFlexibleRightMargin |UIViewAutoresizingFlexibleWidth;
@@ -175,14 +167,14 @@
 	if (pageIndex <= 0 || pageIndex > [_pdfViewCtrl getPageCount]) {
 		self.pageNumBar.text = @"";
 		self.pageNumBar.placeholder = [self getDisplayPageLabel:[_pdfViewCtrl getCurrentPage] needTotal:YES];
-		AlertView *alertView = [[[AlertView alloc]
+		AlertView *alertView = [[AlertView alloc]
 								 initWithTitle:@"kWarning"
 								 message:[NSString stringWithFormat:@"%@ %d - %d", NSLocalizedString(@"kWrongPageNumber", nil), 1, [_pdfViewCtrl getPageCount]]
 								 buttonClickHandler:^(UIView *alertView, int buttonIndex) {
 									 [self showGotoPageToolbar:nil];
 								 }
 								 cancelButtonTitle:nil
-								 otherButtonTitles:@"kOK", nil] autorelease];
+								 otherButtonTitles:@"kOK", nil];
 		[alertView show];
 	} else {
 		[self gotoPage:pageIndex - 1 animated:NO];
@@ -236,33 +228,35 @@
     if (!self.gotoToolbarShouldShow) {
         self.pageNumBar.text = nil;
     }
-    [_readFrame changeState:STATE_NORMAL];
+    [_readFrame changeState:_oldReadFrameState];
 }
 
 - (void)showGotoPageToolbar:(UITapGestureRecognizer *)recognizer
 {
     [_extensionsManager setCurrentAnnot:nil];
-    
+
 	[[NSNotificationCenter defaultCenter] addObserver:self
 											 selector:@selector(keyboardWillShow:)
 												 name:UIKeyboardWillShowNotification
 											   object:nil];
-	
+
 	[[NSNotificationCenter defaultCenter] addObserver:self
 											 selector:@selector(keyboardWillHide:)
 												 name:UIKeyboardWillHideNotification
 											   object:nil];
-	
+
 	[_pdfViewCtrl addSubview:self.gotoPageToolbar];
 	[self.pageNumBar becomeFirstResponder];
 	self.gotoPageToolbar.hidden = NO;
+    if([_readFrame getState] != STATE_PAGENAVIGATE)
+        _oldReadFrameState = [_readFrame getState];
     [_readFrame changeState:STATE_PAGENAVIGATE];
 }
 
 - (void)handleGotoPrevView:(UITapGestureRecognizer *)recognizer
 {
     [_extensionsManager setCurrentAnnot:nil];
-    
+
 	if ([_pdfViewCtrl hasPrevView]) {
         [_pdfViewCtrl gotoPrevView:YES];
 	}
@@ -271,7 +265,7 @@
 - (void)handleGotoNextView:(UITapGestureRecognizer *)recognizer
 {
     [_extensionsManager setCurrentAnnot:nil];
-    
+
 	if ([_pdfViewCtrl hasNextView]) {
         [_pdfViewCtrl gotoNextView:YES];
 	}
@@ -282,7 +276,7 @@
     self.pageNumView.hidden = NO;
     _totalNumLabel.text = [self getDisplayPageLabel:[_pdfViewCtrl getCurrentPage] needTotal:YES];
     _totalNumLabel.font = [UIFont systemFontOfSize:15];
-    
+
     CGSize sizeName = [self.totalNumLabel.text sizeWithFont:self.totalNumLabel.font
                                           constrainedToSize:CGSizeMake(MAXFLOAT, 0.0)
                                               lineBreakMode:NSLineBreakByWordWrapping];
@@ -291,9 +285,9 @@
     } else {
         self.totalNumLabel.frame = CGRectMake(0, (30 - sizeName.height)/2, sizeName.width, sizeName.height);
     }
-    
+
     CGRect viewFrame = self.pageNumView.frame;
-    
+
     if ([_pdfViewCtrl hasPrevView] && ![_pdfViewCtrl hasNextView]) {
         viewFrame.size.width = 46 + self.totalNumLabel.frame.size.width;
         self.pageNumView.frame = viewFrame;
@@ -336,7 +330,7 @@
     [_pdfViewCtrl registerGestureEventListener:self];
 	[_pdfViewCtrl registerPageEventListener:self];
 	[_pdfViewCtrl registerDocEventListener:self];
-    
+
 	[_readFrame registerFullScreenListener:self];
     [_readFrame registerStateChangeListener:self];
     [_readFrame registerRotateChangedListener:self];
@@ -364,7 +358,7 @@
 		self.nextImage.frame = CGRectMake(20 + self.totalNumLabel.frame.size.width, 9, 16, 16);
 		self.nextImage.hidden = NO;
 		self.prevImage.hidden = YES;
-		
+
 	} else if ([_pdfViewCtrl hasPrevView] && [_pdfViewCtrl hasNextView]) {
 		viewFrame.size.width = 72 + self.totalNumLabel.frame.size.width;
 		self.pageNumView.frame = viewFrame;
@@ -425,7 +419,7 @@
 
 -(void)onDocWillSave:(FSPDFDoc*)document
 {
-    
+
 }
 
 - (void)willRotateToInterfaceOrientation:(UIInterfaceOrientation)toInterfaceOrientation duration:(NSTimeInterval)duration{
@@ -491,7 +485,7 @@
 
 -(void)onStateChanged:(int)state
 {
-    if (state == STATE_THUMBNAIL || state == STATE_ANNOTTOOL || state == STATE_EDIT) {
+    if (state == STATE_THUMBNAIL || state == STATE_ANNOTTOOL || state == STATE_EDIT || state == STATE_SIGNATURE) {
         self.pageNumView.hidden = YES;
     }
     else

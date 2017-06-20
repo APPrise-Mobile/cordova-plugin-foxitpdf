@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2003-2016, Foxit Software Inc..
+ * Copyright (C) 2003-2017, Foxit Software Inc..
  * All Rights Reserved.
  *
  * http://www.foxitsoftware.com
@@ -8,7 +8,6 @@
  * distribute any parts of Foxit Mobile PDF SDK to third party or public without permission unless an agreement
  * is signed between Foxit Software Inc. and customers to explicitly grant customers permissions.
  * Review legal.txt for additional license and legal information.
- 
  */
 
 #import "FtToolHandler.h"
@@ -22,7 +21,7 @@
 
 @property (nonatomic, assign)CGPoint tapPoint;
 @property (nonatomic, assign)BOOL pageIsAlreadyExist;
-@property (nonatomic, retain)FSPointF* originalDibPoint;
+@property (nonatomic, strong)FSPointF* originalDibPoint;
 
 @end
 
@@ -50,11 +49,7 @@
     return self;
 }
 
-- (void)dealloc
-{
-    [_originalDibPoint release];
-    [super dealloc];
-}
+
 
 -(NSString*)getName
 {
@@ -353,8 +348,7 @@
             StringDrawUtil *strDrawUtil = [[StringDrawUtil alloc] initWithFont:_textView.font];
             NSString *content = [strDrawUtil getReturnRefinedString:_textView.text forUITextViewWidth:_textView.bounds.size.width];
             
-            [strDrawUtil release];
-            
+                        
             CGRect annotRectPV = CGRectMake(textFrame.origin.x, textFrame.origin.y, textFrame.size.width,textFrame.size.height);
             FSRectF* rect = [_pdfViewCtrl convertPageViewRectToPdfRect:annotRectPV pageIndex:_currentPageIndex];
             
@@ -390,25 +384,19 @@
             [annot resetAppearanceStream];
             
             if (annot) {
-                Task *task = [[[Task alloc] init] autorelease];
-                task.run = ^(){
-                    [_extensionsManager onAnnotAdded:page annot:annot];
-                    [_pdfViewCtrl refresh:_textView.frame pageIndex:_currentPageIndex];
-                };
-                [_extensionsManager.taskServer executeSync:task];
+                id<IAnnotHandler> annotHandler = [_extensionsManager getAnnotHandlerByAnnot:annot];
+                [annotHandler addAnnot:annot addUndo:YES];
             }
         }
         [_textView resignFirstResponder];
         [_textView removeFromSuperview];
         
         // Tricky fix ios7 crash
-        UITextView *oldView = _textView;
-        
+
         double delayInSeconds = .1;
         dispatch_time_t popTime = dispatch_time(DISPATCH_TIME_NOW, (int64_t)(delayInSeconds * NSEC_PER_SEC));
         dispatch_after(popTime, dispatch_get_main_queue(), ^(void){
-            [oldView release];
-        });
+                    });
         _textView = nil;
         self.pageIsAlreadyExist = NO;
         
@@ -457,8 +445,7 @@
                 [jumpPdfPoint setX:oldPdfPoint.x];
                 [jumpPdfPoint setY:oldPdfPoint.y - pdfOffsetY];
                 [_pdfViewCtrl gotoPage:pageIndex withDocPoint:jumpPdfPoint animated:YES];
-                [jumpPdfPoint release];
-            }
+                            }
         }
     }
     else

@@ -1,21 +1,22 @@
 /**
- * Copyright (C) 2003-2016, Foxit Software Inc..
+ * Copyright (C) 2003-2017, Foxit Software Inc..
  * All Rights Reserved.
  *
  * http://www.foxitsoftware.com
  *
- * The following code is copyrighted and is the proprietary of Foxit Software Inc.. It is not allowed to 
- * distribute any parts of Foxit Mobile PDF SDK to third party or public without permission unless an agreement 
+ * The following code is copyrighted and is the proprietary of Foxit Software Inc.. It is not allowed to
+ * distribute any parts of Foxit Mobile PDF SDK to third party or public without permission unless an agreement
  * is signed between Foxit Software Inc. and customers to explicitly grant customers permissions.
  * Review legal.txt for additional license and legal information.
-
  */
+
 #import "ReplyTableViewController.h"
 #import "AnnotationListViewController.h"
 #import "AnnotationListMore.h"
 #import "Masonry/Masonry.h"
 #import "UINavigationItem+IOS7PaddingAdditions.h"
 #import "ColorUtility.h"
+#import "FSUndo.h"
 
 @interface ReplyTableViewController ()<AnnotationListCellDelegate>
 
@@ -23,7 +24,6 @@
 @property(nonatomic,strong)NSMutableDictionary* annoStruct;
 @property(nonatomic,strong)NSMutableDictionary* nodeAnnos;
 
-@property(nonatomic,assign)NSString*modifyContent;
 @end
 
 @implementation ReplyTableViewController {
@@ -53,7 +53,7 @@
         self.view.autoresizingMask=UIViewAutoresizingFlexibleLeftMargin | UIViewAutoresizingFlexibleRightMargin | UIViewAutoresizingFlexibleTopMargin | UIViewAutoresizingFlexibleBottomMargin | UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
         self.tableView.separatorStyle = UITableViewCellSeparatorStyleSingleLine;
         self.tableView.backgroundColor = [UIColor clearColor];
-        self.tableView.backgroundView = [[[UIView alloc] init] autorelease];
+        self.tableView.backgroundView = [[UIView alloc] init];
         if ([self.tableView respondsToSelector:@selector(setSeparatorInset:)])
         {
             [self.tableView setSeparatorInset:UIEdgeInsetsMake(0, 10, 0, 0)];
@@ -62,11 +62,10 @@
         {
             [self.tableView setLayoutMargins:UIEdgeInsetsMake(0, 10, 0, 0)];
         }
-        UIView *view = [[[UIView alloc]init] autorelease];
+        UIView *view = [[UIView alloc]init];
         view.backgroundColor = [UIColor clearColor];
         [self.tableView setTableFooterView:view];
-        [view release];
-        
+                
         if (OS_ISVERSION7) {
             
             self.tableView.separatorInset=UIEdgeInsetsZero;
@@ -98,7 +97,7 @@
     NSMutableArray *itemArray = [NSMutableArray array];
     for (FSAnnot* anno in annotatios) {
         
-        AnnotationItem *item = [[[AnnotationItem alloc] init] autorelease];
+        AnnotationItem *item = [[AnnotationItem alloc] init];
         item.annot = anno;
         item.currentlevelshow=NO;
         item.currentlevel=1;
@@ -143,14 +142,9 @@
 
 -(void)dealloc{
     
-    [_rootAnnos release];
-    [_annoStruct release];
-    [_nodeAnnos release];
-    [_buttonLeft release];
-    self.editingCancelHandler=nil;
+                    self.editingCancelHandler=nil;
     self.editingDoneHandler=nil;
     [[NSNotificationCenter defaultCenter]removeObserver:self];
-    [super dealloc];
 }
 
 - (void)viewDidLoad
@@ -190,8 +184,7 @@
                 edittextview.inputAccessoryView = doneView;
                 self.isShowMore = NO;
                 [self.tableView reloadData];
-                [doneView release];
-            }
+                            }
         }else if (((STYLE_CELLWIDTH_IPHONE * STYLE_CELLHEIHGT_IPHONE) >= (375 * 667))&&(o ==  UIDeviceOrientationPortrait || o == UIDeviceOrientationPortraitUpsideDown)){
             NSArray *arr = self.tableView.visibleCells;
             for (AnnotationListCell *cell in arr) {
@@ -210,8 +203,7 @@
                 edittextview.inputAccessoryView = doneView;
                 self.isShowMore = NO;
                 [self.tableView reloadData];
-                [doneView release];
-            }
+                            }
         }
         [NSObject cancelPreviousPerformRequestsWithTarget:self.tableView selector:@selector(reloadData) object:nil];
         double delayInSeconds = 0.5;
@@ -259,8 +251,8 @@
     [buttonDone setTitleColor:[UIColor grayColor] forState:UIControlStateDisabled];
     [buttonDone addTarget:self action:@selector(doneAction) forControlEvents:UIControlEventTouchUpInside];
     
-    [self.navigationItem addLeftBarButtonItem:_buttonLeft?[[[UIBarButtonItem alloc] initWithCustomView:_buttonLeft] autorelease]:nil];
-    [self.navigationItem addRightBarButtonItem:buttonDone?[[[UIBarButtonItem alloc] initWithCustomView:buttonDone] autorelease]:nil];
+    [self.navigationItem addLeftBarButtonItem:_buttonLeft?[[UIBarButtonItem alloc] initWithCustomView:_buttonLeft]:nil];
+    [self.navigationItem addRightBarButtonItem:buttonDone?[[UIBarButtonItem alloc] initWithCustomView:buttonDone]:nil];
     
     if (!_extensionsManager.currentAnnot.canModify) {
         [self.buttonLeft setTitleColor:[UIColor grayColor] forState:UIControlStateNormal];
@@ -325,10 +317,7 @@
         [titleView addSubview:titleLabel];
         self.navigationItem.titleView = titleView;
         
-        [titleView release];
-        [titleLabel release];
-        [actIndicatorView release];
-    }
+                            }
 }
 - (void)navigationController:(UINavigationController *)navigationController willShowViewController:(UIViewController *)viewController animated:(BOOL)animated
 {
@@ -366,23 +355,21 @@
         UITextView* edittextview=(UITextView*)[cell.contentView viewWithTag:107];
         UILabel* labelContents=(UILabel*)[cell.contentView viewWithTag:104];
         
-        NSDate *now = [NSDate date];
         if (self.editAnnoItem) {
-            if (![edittextview.text isEqualToString:self.editAnnoItem.annot.contents] && !(edittextview.text.length == 0 && self.editAnnoItem.annot.contents.length == 0))
+            FSAnnot* annot = self.editAnnoItem.annot;
+            if (![edittextview.text isEqualToString:annot.contents] && !(edittextview.text.length == 0 && annot.contents.length == 0))
             {
-                self.editAnnoItem.annot.contents = edittextview.text;
-                self.editAnnoItem.annot.modifiedDate = now;
-                id<IAnnotHandler> annotHandler = [_extensionsManager getAnnotHandlerByType:self.editAnnoItem.annot.type];
-                [annotHandler modifyAnnot:self.editAnnoItem.annot];
+                [self modifyAnnot:annot withContents:edittextview.text];
             }
             self.editAnnoItem = nil;
+            _extensionsManager.currentAnnot = nil;
         }
         if ( _replyanno && _replyanno.isReply == YES) {
             
             _replyanno.annot.contents = edittextview.text;
             _replyanno.isReply = NO;
             
-            id<IAnnotHandler> annotHandler = [_extensionsManager getAnnotHandlerByType:_replyanno.annot.type];
+            id<IAnnotHandler> annotHandler = [_extensionsManager getAnnotHandlerByAnnot:_replyanno.annot];
             [annotHandler addAnnot:_replyanno.annot];
         }
         
@@ -431,7 +418,7 @@
     AnnotationListCell* cell=[tableView dequeueReusableCellWithIdentifier:cellidentifier];
     AnnotationItem* annoItem=[[self.nodeAnnos objectForKey:[[[self.rootAnnos objectAtIndex:indexPath.section] annot] NM]]objectAtIndex:indexPath.row];
     if (cell == nil) {
-        cell=[[[AnnotationListCell alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:cellidentifier isMenu:YES superView:self.view typeOf:0] autorelease];
+        cell=[ [AnnotationListCell alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:cellidentifier isMenu:YES superView:self.view typeOf:0];
         cell.delegate=self;
         cell.backgroundColor = [UIColor clearColor];
     }
@@ -792,22 +779,19 @@
         UITextView* edittextview=(UITextView*)[cell.contentView viewWithTag:107];
         UILabel* labelContents=(UILabel*)[cell.contentView viewWithTag:104];
         
-        NSDate *now = [NSDate date];
         if (self.editAnnoItem) {
             if (![edittextview.text isEqualToString:self.editAnnoItem.annot.contents] && !(edittextview.text.length == 0 && self.editAnnoItem.annot.contents.length == 0))
             {
-                self.editAnnoItem.annot.contents = edittextview.text;
-                self.editAnnoItem.annot.modifiedDate = now;
-                id<IAnnotHandler> annotHandler = [_extensionsManager getAnnotHandlerByType:self.editAnnoItem.annot.type];
-                [annotHandler modifyAnnot:self.editAnnoItem.annot];
+                [self modifyAnnot:self.editAnnoItem.annot withContents:edittextview.text];
             }
             self.editAnnoItem = nil;
+            _extensionsManager.currentAnnot = nil;
         }
         if ( _replyanno && _replyanno.isReply == YES) {
             
             _replyanno.annot.contents = edittextview.text;
             _replyanno.isReply = NO;
-            id<IAnnotHandler> annotHandler = [_extensionsManager getAnnotHandlerByType:_replyanno.annot.type];
+            id<IAnnotHandler> annotHandler = [_extensionsManager getAnnotHandlerByAnnot:_replyanno.annot];
             [annotHandler addAnnot:_replyanno.annot];
             _replyanno=nil;
             
@@ -838,6 +822,7 @@
     AnnotationListCell* selectcell = (AnnotationListCell*)[tableView cellForRowAtIndexPath:indexPath];
 
     self.editAnnoItem = selectcell.item;
+    _extensionsManager.currentAnnot = self.editAnnoItem.annot;
     self.indexPath = indexPath;
     selectcell.isInputText = YES;
     
@@ -1005,18 +990,15 @@
 
 - (void)textViewDidEndEditing:(UITextView *)textView{
     
-    NSDate *now = [NSDate date];
     if (self.editAnnoItem) {
-        self.editAnnoItem.annot.contents=textView.text;
-        self.editAnnoItem.annot.modifiedDate=now;
-        id<IAnnotHandler> annotHandler = [_extensionsManager getAnnotHandlerByType:self.editAnnoItem.annot.type];
-        [annotHandler modifyAnnot:self.editAnnoItem.annot];
+        [self modifyAnnot:self.editAnnoItem.annot withContents:textView.text];
         self.editAnnoItem = nil;
+        _extensionsManager.currentAnnot = nil;
     }
     if ( _replyanno && _replyanno.isReply==YES) {
         _replyanno.annot.contents=textView.text;
         _replyanno.isReply=NO;
-        id<IAnnotHandler> annotHandler = [_extensionsManager getAnnotHandlerByType:_replyanno.annot.type];
+        id<IAnnotHandler> annotHandler = [_extensionsManager getAnnotHandlerByAnnot:_replyanno.annot];
         [annotHandler addAnnot:_replyanno.annot];
         _replyanno=nil;
         
@@ -1048,6 +1030,15 @@
         return;
     }
     
+    // restore to original contents if annot being edited
+    {
+        AnnotationListCell *cell = (AnnotationListCell*)[self.tableView cellForRowAtIndexPath:self.indexPath];
+        UITextView* edittextview = (UITextView*)[cell.contentView viewWithTag:107];
+        if (edittextview.isFirstResponder) {
+            edittextview.text = item.annot.contents;
+        }
+    }
+    
     AnnotationItem* replytoannotation= item;
     
     NSMutableArray* deletearray=[NSMutableArray arrayWithObject:replytoannotation];
@@ -1055,7 +1046,7 @@
     [deletearray addObjectsFromArray:[[AnnotationStruct getSingle]getAllChildNodesWithSuperAnnotation:replytoannotation andAnnoStruct:self.annoStruct]];
     
     [self deletaAnnotatios:deletearray];
-    id<IAnnotHandler> annotHandler = [_extensionsManager getAnnotHandlerByType:replytoannotation.annot.type];
+    id<IAnnotHandler> annotHandler = [_extensionsManager getAnnotHandlerByAnnot:replytoannotation.annot];
     [annotHandler removeAnnot:replytoannotation.annot];
     if (_extensionsManager.currentAnnot) {
         [_extensionsManager setCurrentAnnot:nil];
@@ -1071,19 +1062,16 @@
         UITextView* edittextview=(UITextView*)[cell.contentView viewWithTag:107];
         UILabel* labelContents=(UILabel*)[cell.contentView viewWithTag:104];
         
-        NSDate *now = [NSDate date];
         if (self.editAnnoItem) {
-            self.editAnnoItem.annot.contents = edittextview.text;
-            self.editAnnoItem.annot.modifiedDate = now;
-            id<IAnnotHandler> annotHandler = [_extensionsManager getAnnotHandlerByType:self.editAnnoItem.annot.type];
-            [annotHandler modifyAnnot:self.editAnnoItem.annot];
+            [self modifyAnnot:self.editAnnoItem.annot withContents:edittextview.text];
             self.editAnnoItem = nil;
+            _extensionsManager.currentAnnot = nil;
         }
         if ( _replyanno && _replyanno.isReply == YES) {
             
             _replyanno.annot.contents = edittextview.text;
             _replyanno.isReply = NO;
-            id<IAnnotHandler> annotHandler = [_extensionsManager getAnnotHandlerByType:_replyanno.annot.type];
+            id<IAnnotHandler> annotHandler = [_extensionsManager getAnnotHandlerByAnnot:_replyanno.annot];
             [annotHandler addAnnot:_replyanno.annot];
             _replyanno=nil;
             
@@ -1109,7 +1097,7 @@
     }
     
     self.pageIndex = replytoannotation.annot.pageIndex;
-    self.replyanno = [[[AnnotationItem alloc] init] autorelease];
+    self.replyanno = [[AnnotationItem alloc] init];
 
     FSPDFPage* page = [_document getPage:(int)self.pageIndex];
     if (!page) return;
@@ -1205,6 +1193,12 @@
 - (void)keyboardDidShow:(NSNotification *)note{
     
         [self.tableView scrollToRowAtIndexPath:self.indexPath atScrollPosition:UITableViewScrollPositionBottom animated:YES];
+}
+
+- (void)modifyAnnot:(FSAnnot*)annot withContents:(NSString*)contents
+{
+    annot.contents = contents;
+
 }
 
 @end

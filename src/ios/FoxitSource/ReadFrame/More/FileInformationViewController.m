@@ -1,14 +1,13 @@
 /**
- * Copyright (C) 2003-2016, Foxit Software Inc..
+ * Copyright (C) 2003-2017, Foxit Software Inc..
  * All Rights Reserved.
  *
  * http://www.foxitsoftware.com
  *
- * The following code is copyrighted and is the proprietary of Foxit Software Inc.. It is not allowed to 
- * distribute any parts of Foxit Mobile PDF SDK to third party or public without permission unless an agreement 
+ * The following code is copyrighted and is the proprietary of Foxit Software Inc.. It is not allowed to
+ * distribute any parts of Foxit Mobile PDF SDK to third party or public without permission unless an agreement
  * is signed between Foxit Software Inc. and customers to explicitly grant customers permissions.
  * Review legal.txt for additional license and legal information.
-
  */
 
 #import "FileInformationViewController.h"
@@ -24,7 +23,7 @@
 
 @interface FileInformationViewController ()
 
-@property (nonatomic, assign) FSPDFViewCtrl         *pdfViewCtrl;
+@property (nonatomic, weak) FSPDFViewCtrl         *pdfViewCtrl;
 
 @end
 
@@ -39,7 +38,7 @@
     [super viewDidLoad];
     self.view.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight | UIViewAutoresizingFlexibleRightMargin;
     CGRect tableRect = CGRectMake(0, 0, self.view.frame.size.width, self.view.frame.size.height);
-    self.tableView = [[[UITableView alloc] initWithFrame:tableRect style:UITableViewStyleGrouped] autorelease];
+    self.tableView = [[UITableView alloc] initWithFrame:tableRect style:UITableViewStyleGrouped];
     self.tableView.delegate = self;
     self.tableView.dataSource = self;
     self.tableView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
@@ -118,10 +117,8 @@
     UIViewAutoresizingFlexibleHeight;
     [buttonInnerOperationButton addTarget:self action:@selector(okAction:) forControlEvents:UIControlEventTouchUpInside];
     UIBarButtonItem *buttonOperatingItem = [[UIBarButtonItem alloc]initWithCustomView:buttonInnerOperationButton];
-    [buttonInnerOperationButton release];
-    [self.navigationItem addLeftBarButtonItem:buttonOperatingItem];
-    [buttonOperatingItem release];
-    
+        [self.navigationItem addLeftBarButtonItem:buttonOperatingItem];
+        
     
     if (!self.navigationItem.titleView)
     {
@@ -154,10 +151,7 @@
         [titleView addSubview:actIndicatorView];
         titleView.center = CGPointMake(self.view.frame.size.width/2, titleView.center.y);
         self.navigationItem.titleView= titleView;
-        [titleView release];
-        [titleLabel release];
-        [actIndicatorView release];
-    }
+                            }
 
     if (self.navigationItem.titleView != nil)
     {
@@ -216,8 +210,8 @@
 
 -(UIView *)tableView:(UITableView *)tableView viewForHeaderInSection:(NSInteger)section
 {
-    UIView *view = [[[UIView alloc] init] autorelease];
-    UILabel *label = [[[UILabel alloc] initWithFrame:CGRectMake(10, TOPMARGEN, LABLEWIDTH + 300, LABLEHIGHT)] autorelease];
+    UIView *view = [[UIView alloc] init];
+    UILabel *label = [[UILabel alloc] initWithFrame:CGRectMake(10, TOPMARGEN, LABLEWIDTH + 300, LABLEHIGHT)];
     label.font =[UIFont systemFontOfSize:15.0f];
     
     if (section == 0) {
@@ -260,17 +254,17 @@ static NSString* getRelativePathFromAbsolutePath(NSString* absolutePath)
     
     UITableViewCell *cell = [tableView dequeueReusableCellWithIdentifier:cellidentifer];
     if (cell == nil) {
-        cell = [[[UITableViewCell alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:cellidentifer] autorelease];
+        cell = [[UITableViewCell alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:cellidentifer];
     }
     cell.selectionStyle = UITableViewCellSelectionStyleNone;
     if (indexPath.section == 0) {
         
-        UILabel *leftLabel = [[[UILabel alloc]init]autorelease];
+        UILabel *leftLabel = [[UILabel alloc]init];
         leftLabel.font =[UIFont systemFontOfSize:15.0f];
         leftLabel.backgroundColor=[UIColor clearColor];
         leftLabel.frame=CGRectMake(LEFTMARGEN, 5, 100, 30);
         
-        UILabel *rightLabel = [[[UILabel alloc]init]autorelease];
+        UILabel *rightLabel = [[UILabel alloc]init];
         rightLabel.font =[UIFont systemFontOfSize:15.0f];
         rightLabel.backgroundColor=[UIColor clearColor];
         rightLabel.frame=CGRectMake(LEFTMARGEN + 100, 5, self.view.bounds.size.width - LEFTMARGEN -110, 30);
@@ -280,12 +274,14 @@ static NSString* getRelativePathFromAbsolutePath(NSString* absolutePath)
         if (indexPath.row == 0)
         {
             leftLabel.text = [NSString stringWithFormat:@"%@:",NSLocalizedString(@"kByFileName", nil)];
-            rightLabel.text = [DEMO_APPDELEGATE.filePath lastPathComponent];
+            NSString *filePath = [FoxitPdf getFilePath];
+            rightLabel.text = [filePath lastPathComponent];
         }
         else if (indexPath.row == 1)
         {
             leftLabel.text = [NSString stringWithFormat:@"%@:",NSLocalizedString(@"kFilePath", nil)];
-            rightLabel.text = getRelativePathFromAbsolutePath([DEMO_APPDELEGATE.filePath stringByDeletingLastPathComponent]);
+            NSString *filePath = [FoxitPdf getFilePath];
+            rightLabel.text = getRelativePathFromAbsolutePath([filePath stringByDeletingLastPathComponent]);
         }
         else if (indexPath.row == 2)
         {
@@ -293,8 +289,9 @@ static NSString* getRelativePathFromAbsolutePath(NSString* absolutePath)
             
             unsigned long long fileSize = 0;
             NSFileManager* manager = [NSFileManager defaultManager];
-            if ([manager fileExistsAtPath:DEMO_APPDELEGATE.filePath]){
-                fileSize = [[manager attributesOfItemAtPath:DEMO_APPDELEGATE.filePath error:nil] fileSize];
+            NSString *filePath = [FoxitPdf getFilePath];
+            if ([manager fileExistsAtPath:filePath]){
+                fileSize = [[manager attributesOfItemAtPath:filePath error:nil] fileSize];
             }
             rightLabel.text = [Utility displayFileSize:fileSize];
             
@@ -325,7 +322,7 @@ static NSString* getRelativePathFromAbsolutePath(NSString* absolutePath)
     else if (indexPath.section == 1)
     {
         cell.accessoryType = UITableViewCellAccessoryDisclosureIndicator;
-        UILabel *label = [[[UILabel alloc]init]autorelease];
+        UILabel *label = [[UILabel alloc]init];
         label.font =[UIFont systemFontOfSize:15.0f];
         label.backgroundColor=[UIColor clearColor];
         label.frame=CGRectMake(LEFTMARGEN, 5, 200, 30);
@@ -347,7 +344,7 @@ static NSString* getRelativePathFromAbsolutePath(NSString* absolutePath)
     else if (indexPath.section == 2)
     {
         cell.accessoryType = UITableViewCellAccessoryDisclosureIndicator;
-        UILabel *label = [[[UILabel alloc]init]autorelease];
+        UILabel *label = [[UILabel alloc]init];
         label.font =[UIFont systemFontOfSize:15.0f];
         label.backgroundColor=[UIColor clearColor];
         label.frame=CGRectMake(LEFTMARGEN, 5, 200, 30);
@@ -373,31 +370,21 @@ static NSString* getRelativePathFromAbsolutePath(NSString* absolutePath)
 - (void)viewSecurityPermission
 {
     FSPDFDoc *document = _pdfViewCtrl.currentDoc;
-    PermissionViewController *permissionCtrl = [[[PermissionViewController alloc] initWithStyle:UITableViewStyleGrouped] autorelease];
-    enum FS_PASSWORDTYPE type = [document getPasswordType];
+    PermissionViewController *permissionCtrl = [[PermissionViewController alloc] initWithStyle:UITableViewStyleGrouped];
     unsigned long allPermission = [document getUserPermissions];
-    if (type == e_pwdNoPassword )
-        permissionCtrl.allowOwner = YES;
-    else
-        permissionCtrl.allowOwner = NO;
+    permissionCtrl.allowOwner = [Utility isOwnerOfDoucment:document]; // ? rename property to isOwner
     if (!permissionCtrl.allowOwner)
     {
-        permissionCtrl.allowPrint = (allPermission & e_permPrint);
-        permissionCtrl.allowFillForm = (allPermission & e_permFillForm) || (allPermission & e_permAnnotForm) || (allPermission & e_permModify);
-        permissionCtrl.allowAssemble = (allPermission & e_permAssemble)
-        || (allPermission & e_permModify);
-        permissionCtrl.allowAnnotate = (allPermission & e_permAnnotForm);
-        permissionCtrl.allowEdit = (allPermission & e_permModify);
-        permissionCtrl.allowExtractAccess = (allPermission & e_permExtractAccess) || (allPermission & e_permExtract);
-        permissionCtrl.allowExtract = (allPermission & e_permExtract);
+        permissionCtrl.allowPrint = (allPermission & e_permPrint) > 0;
+        permissionCtrl.allowFillForm = [Utility canFillFormInDocument:document];
+        permissionCtrl.allowAssemble = [Utility canAssembleDocument:document];
+        permissionCtrl.allowAnnotate = [Utility canAddAnnotToDocument:document];
+        permissionCtrl.allowEdit = (allPermission & e_permModify) > 0;
+        permissionCtrl.allowExtractAccess = (allPermission & e_permExtractAccess) > 0 || (allPermission & e_permExtract) > 0;
+        permissionCtrl.allowExtract = (allPermission & e_permExtract) > 0;
     }
     [permissionCtrl.tableView reloadData];
     [self.navigationController pushViewController:permissionCtrl animated:YES];
-}
-
-- (void)viewReviewInfo
-{
-
 }
 
 

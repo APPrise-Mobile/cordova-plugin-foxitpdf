@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2003-2016, Foxit Software Inc..
+ * Copyright (C) 2003-2017, Foxit Software Inc..
  * All Rights Reserved.
  *
  * http://www.foxitsoftware.com
@@ -8,31 +8,27 @@
  * distribute any parts of Foxit Mobile PDF SDK to third party or public without permission unless an agreement
  * is signed between Foxit Software Inc. and customers to explicitly grant customers permissions.
  * Review legal.txt for additional license and legal information.
- 
  */
+
 #import "FreetextModule.h"
 #import <FoxitRDK/FSPDFViewControl.h>
 
 #import "UIExtensionsSharedHeader.h"
 #import "Utility+Demo.h"
-#import "Defines.h"
+
 
 @interface FreetextModule ()
 
-@property (nonatomic, retain) TbBaseItem *propertyItem;
+@property (nonatomic, weak) TbBaseItem *propertyItem;
 
 @end
 
 @implementation FreetextModule {
-    UIExtensionsManager* _extensionsManager;
-    ReadFrame* _readFrame;
+    UIExtensionsManager* __weak _extensionsManager;
+    ReadFrame* __weak _readFrame;
 }
 
--(void)dealloc
-{
-    [_propertyItem release];
-    [super dealloc];
-}
+
 
 - (instancetype)initWithUIExtensionsManager:(UIExtensionsManager*)extensionsManager readFrame:(ReadFrame*)readFrame
 {
@@ -40,7 +36,7 @@
     if (self) {
         _extensionsManager = extensionsManager;
         _readFrame = readFrame;
-        [_extensionsManager registerPropertyBarListener:self];
+        [_extensionsManager registerAnnotPropertyListener:self];
         
         [self loadModule];
     }
@@ -76,7 +72,8 @@
         [_readFrame changeState:STATE_EDIT];
     };
     
-    self.propertyItem = [TbBaseItem createItemWithImage:[UIImage imageNamed:@"annotation_toolitembg"] imageSelected:[UIImage imageNamed:@"annotation_toolitembg"] imageDisable:[UIImage imageNamed:@"annotation_toolitembg"]];
+    TbBaseItem* propertyItem = [TbBaseItem createItemWithImage:[UIImage imageNamed:@"annotation_toolitembg"] imageSelected:[UIImage imageNamed:@"annotation_toolitembg"] imageDisable:[UIImage imageNamed:@"annotation_toolitembg"]];
+    self.propertyItem = propertyItem;
     _propertyItem.tag = 1;
     [self.propertyItem setInsideCircleColor:[_extensionsManager getPropertyBarSettingColor:e_annotFreeText]];
     [_readFrame.toolSetBar addItem:_propertyItem displayPosition:Position_CENTER];
@@ -93,7 +90,6 @@
         }
         
     };
-    
     
     TbBaseItem *continueItem = nil;
     if (_readFrame.continueAddAnnot) {

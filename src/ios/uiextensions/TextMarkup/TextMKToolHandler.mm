@@ -1,14 +1,15 @@
 /**
- * Copyright (C) 2003-2016, Foxit Software Inc..
+ * Copyright (C) 2003-2017, Foxit Software Inc..
  * All Rights Reserved.
  *
  * http://www.foxitsoftware.com
  *
- * The following code is copyrighted and is the proprietary of Foxit Software Inc.. It is not allowed to 
- * distribute any parts of Foxit Mobile PDF SDK to third party or public without permission unless an agreement 
+ * The following code is copyrighted and is the proprietary of Foxit Software Inc.. It is not allowed to
+ * distribute any parts of Foxit Mobile PDF SDK to third party or public without permission unless an agreement
  * is signed between Foxit Software Inc. and customers to explicitly grant customers permissions.
  * Review legal.txt for additional license and legal information.
  */
+
 #import "UIExtensionsManager+Private.h"
 #import <FoxitRDK/FSPDFViewControl.h>
 #import "TextMKToolHandler.h"
@@ -25,11 +26,7 @@
     TaskServer* _taskServer;
 }
 
--(void)dealloc
-{
-    [_arraySelectedRect release];
-    [super dealloc];
-}
+
 
 - (instancetype)initWithUIExtensionsManager:(UIExtensionsManager*)extensionsManager
 {
@@ -133,8 +130,7 @@
 - (void)closeMagnifier
 {
     [_magnifierView removeFromSuperview];
-    [_magnifierView release];
-    _magnifierView = nil;
+        _magnifierView = nil;
 }
 
 
@@ -142,7 +138,7 @@
 
 - (NSArray*)getAnnotationQuad:(FSTextMarkup *)annot
 {
-    NSMutableArray *array = [[[NSMutableArray alloc] init] autorelease];
+    NSMutableArray *array = [[NSMutableArray alloc] init];
     FSTextMarkup *markup = annot;
     int quadCount = [markup getQuadPointsCount];
     if (quadCount < 0)
@@ -192,7 +188,7 @@ END:
 
 - (BOOL)onPageViewTap:(int)pageIndex recognizer:(UITapGestureRecognizer *)recognizer
 {
-    return YES;
+       return NO;
 }
 
 - (BOOL)onPageViewPan:(int)pageIndex recognizer:(UIPanGestureRecognizer *)recognizer
@@ -210,7 +206,7 @@ END:
             {
                 FSPDFTextSelect* textPage = [Utility getTextSelect:_pdfViewCtrl.currentDoc pageIndex:pageIndex];
                 NSRange range = [Utility getWordByTextIndex:index textPage:textPage];
-//                [textPage dealloc];
+
                 self.startPosIndex = (int)range.location;
                 self.endPosIndex = (int)(range.location + range.length - 1);
             }
@@ -261,52 +257,52 @@ END:
         {
             FSRectF *dibRect = [Utility CGRect2FSRectF:[[[array objectAtIndex:i] objectAtIndex:0] CGRectValue]];
             int direction = [[[array objectAtIndex:i] objectAtIndex:1] intValue];
-            FSQuadPoints* fsqps = [[[FSQuadPoints alloc] init] autorelease];
+            FSQuadPoints* fsqps = [[FSQuadPoints alloc] init];
             if (direction == 0 || direction == 4) //text is horizontal or unknown, left to right
             {
-                FSPointF* first = [[[FSPointF alloc] init] autorelease];
+                FSPointF* first = [[FSPointF alloc] init];
                 [first set:dibRect.left y:dibRect.top];
-                FSPointF* second = [[[FSPointF alloc] init] autorelease];
+                FSPointF* second = [[FSPointF alloc] init];
                 [second set:dibRect.right y:dibRect.top];
-                FSPointF* third = [[[FSPointF alloc] init] autorelease];
+                FSPointF* third = [[FSPointF alloc] init];
                 [third set:dibRect.left y:dibRect.bottom];
-                FSPointF* fourth = [[[FSPointF alloc] init] autorelease];
+                FSPointF* fourth = [[FSPointF alloc] init];
                 [fourth set:dibRect.right y:dibRect.bottom];
                 [fsqps set:first second:second third:third fourth:fourth];
             }
             else if (direction == 1) // test is vertical, left to right
             {
-                FSPointF* first = [[[FSPointF alloc] init] autorelease];
+                FSPointF* first = [[FSPointF alloc] init];
                 [first set:dibRect.left y:dibRect.bottom];
-                FSPointF* second = [[[FSPointF alloc] init] autorelease];
+                FSPointF* second = [[FSPointF alloc] init];
                 [second set:dibRect.left y:dibRect.top];
-                FSPointF* third = [[[FSPointF alloc] init] autorelease];
+                FSPointF* third = [[FSPointF alloc] init];
                 [third set:dibRect.right y:dibRect.bottom];
-                FSPointF* fourth = [[[FSPointF alloc] init] autorelease];
+                FSPointF* fourth = [[FSPointF alloc] init];
                 [fourth set:dibRect.right y:dibRect.top];
                 [fsqps set:first second:second third:third fourth:fourth];
             }
             else if (direction == 2) //text is horizontal, right to left
             {
-                FSPointF* first = [[[FSPointF alloc] init] autorelease];
+                FSPointF* first = [[FSPointF alloc] init];
                 [first set:dibRect.right y:dibRect.bottom];
-                FSPointF* second = [[[FSPointF alloc] init] autorelease];
+                FSPointF* second = [[FSPointF alloc] init];
                 [second set:dibRect.left y:dibRect.bottom];
-                FSPointF* third = [[[FSPointF alloc] init] autorelease];
+                FSPointF* third = [[FSPointF alloc] init];
                 [third set:dibRect.right y:dibRect.top];
-                FSPointF* fourth = [[[FSPointF alloc] init] autorelease];
+                FSPointF* fourth = [[FSPointF alloc] init];
                 [fourth set:dibRect.left y:dibRect.top];
                 [fsqps set:first second:second third:third fourth:fourth];
             }
             else if (direction == 3) //text is vertical, right to left
             {
-                FSPointF* first = [[[FSPointF alloc] init] autorelease];
+                FSPointF* first = [[FSPointF alloc] init];
                 [first set:dibRect.right y:dibRect.top];
-                FSPointF* second = [[[FSPointF alloc] init] autorelease];
+                FSPointF* second = [[FSPointF alloc] init];
                 [second set:dibRect.right y:dibRect.bottom];
-                FSPointF* third = [[[FSPointF alloc] init] autorelease];
+                FSPointF* third = [[FSPointF alloc] init];
                 [third set:dibRect.left y:dibRect.top];
-                FSPointF* fourth = [[[FSPointF alloc] init] autorelease];
+                FSPointF* fourth = [[FSPointF alloc] init];
                 [fourth set:dibRect.left y:dibRect.bottom];
                 [fsqps set:first second:second third:third fourth:fourth];
             }
@@ -343,10 +339,11 @@ END:
             annot.subject = @"Underline";
         }
         
-        [annot retain];
-        Task *task = [[[Task alloc] init] autorelease];
+        Task *task = [[Task alloc] init];
         task.run = ^(){
-            [_extensionsManager onAnnotAdded:page annot:annot];
+
+            id<IAnnotHandler> annotHandler = [_extensionsManager getAnnotHandlerByAnnot:annot];
+            [annotHandler addAnnot:annot];
             
             CGRect cgRect = [_pdfViewCtrl convertPdfRectToPageViewRect:annot.fsrect pageIndex:self.pageindex];
             cgRect = CGRectInset(cgRect, -20, -20);
@@ -354,8 +351,7 @@ END:
             [_pdfViewCtrl refresh:cgRect pageIndex:self.pageindex];
             [self clearSelection];
             
-            [annot release];
-        };
+                    };
         [_taskServer executeSync:task];
     }
     return NO;

@@ -1,15 +1,15 @@
 /**
- * Copyright (C) 2003-2016, Foxit Software Inc..
+ * Copyright (C) 2003-2017, Foxit Software Inc..
  * All Rights Reserved.
  *
  * http://www.foxitsoftware.com
  *
- * The following code is copyrighted and is the proprietary of Foxit Software Inc.. It is not allowed to 
- * distribute any parts of Foxit Mobile PDF SDK to third party or public without permission unless an agreement 
+ * The following code is copyrighted and is the proprietary of Foxit Software Inc.. It is not allowed to
+ * distribute any parts of Foxit Mobile PDF SDK to third party or public without permission unless an agreement
  * is signed between Foxit Software Inc. and customers to explicitly grant customers permissions.
  * Review legal.txt for additional license and legal information.
-
  */
+
 #import "UIExtensionsManager+Private.h"
 #import <FoxitRDK/FSPDFViewControl.h>
 
@@ -56,12 +56,7 @@
     return self;
 }
 
-- (void)dealloc
-{
-    [_arrayOutlines release];
-    [_outlineGotoPageHandler release];
-    [super dealloc];    
-}
+
 - (void)viewDidLoad
 {
     [super viewDidLoad];
@@ -115,10 +110,10 @@
 - (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath
 {
     if (self.hasParentOutline && indexPath.row == 0) {
-        UITableViewCell *cell = [[[UITableViewCell alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:nil] autorelease];
-        UIImageView *backImageView = [[[UIImageView alloc] initWithImage:[UIImage imageNamed:@"panel_outline_comeback"]] autorelease];
+        UITableViewCell *cell = [[UITableViewCell alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:nil];
+        UIImageView *backImageView = [[UIImageView alloc] initWithImage:[UIImage imageNamed:@"panel_outline_comeback"]];
         [cell.contentView addSubview:backImageView];
-        UILabel *backLabel = [[[UILabel alloc] init] autorelease];
+        UILabel *backLabel = [[UILabel alloc] init];
         backLabel.textColor = [UIColor grayColor];
         backLabel.text = @"...";
         [cell.contentView addSubview:backLabel];
@@ -141,7 +136,7 @@
     UITableViewCell *cell = [tableView dequeueReusableCellWithIdentifier:cellIdentifier];
     if (cell == nil) 
     {
-        cell = [[[UITableViewCell alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:cellIdentifier] autorelease];
+        cell = [[UITableViewCell alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:cellIdentifier];
         cell.backgroundColor = [UIColor clearColor];
         OutlineButton *detailButton = [OutlineButton buttonWithType:UIButtonTypeCustom];
         detailButton.autoresizingMask = UIViewAutoresizingFlexibleBottomMargin | UIViewAutoresizingFlexibleTopMargin | UIViewAutoresizingFlexibleLeftMargin;
@@ -184,8 +179,7 @@
         FSPointF* point = [[FSPointF alloc] init];
         [point set:[dest getLeft] y:[dest getTop]];
         [_pdfViewCtrl gotoPage:[dest getPageIndex] withDocPoint:point animated:NO];
-        [point release];
-    }
+            }
 }
 
 - (void)detailOutline:(id)sender
@@ -198,8 +192,7 @@
     [subOutlineViewCtrl loadData:bookmarkItem];
     subOutlineViewCtrl.outlineGotoPageHandler = self.outlineGotoPageHandler;
     [self.navigationController pushViewController:subOutlineViewCtrl animated:YES];
-    [subOutlineViewCtrl release];
-}
+    }
 
 #pragma mark - methods
 
@@ -254,15 +247,13 @@
             });
         }
         
-        [getOutlineFinishHandler release];
-    });
+            });
 }
 
 - (void)loadData:(FSBookmark *)parentBookmark
 {
     [self getOutline:parentBookmark getOutlineFinishHandler:^(NSMutableArray *bookmark) {
-        [_arrayOutlines release];
-        _arrayOutlines = [bookmark retain];
+                _arrayOutlines = bookmark;
         [self.tableView reloadData];
     }];
 }
@@ -284,7 +275,6 @@
     UIView *view = [[UIView alloc]init];
     view.backgroundColor = [UIColor clearColor];
     [self.tableView setTableFooterView:view];
-    [view release];
-}
+    }
 
 @end

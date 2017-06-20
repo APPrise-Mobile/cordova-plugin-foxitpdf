@@ -1,5 +1,6 @@
 
 //Common
+"kSuccess" = "Success";
 "kWarning" = "Warning";
 "kConfirm" = "Confirm";
 "kOK" = "OK";
@@ -18,9 +19,9 @@
 "kZip" = "Zip";
 "kEdit" = "Edit";
 "kBack" = "Back";
-
-
-
+"kSelectAll" = "Select All";
+"kDeselectAll" = "Deselect All";
+"kCreate" = "Create";
 
 //Error
 "kWrongPageNumber" = "Wrong page number. The number should be";
@@ -33,6 +34,7 @@
 "kInvalidFormat" = "Invalid format.";
 "kHandlerError" = "Invalid handler.";
 "kWrongCertificate" = "Invalid certificate.";
+"kCertExpired" = "Certificate is expired.";
 "kUnknownError" = "Unknown error.";
 "kInvalidLibraryLicense" = "Invalid library license.";
 "kInvalidParameter" = "Invalid parameter.";
@@ -40,6 +42,15 @@
 "kOutOfMemory" = "Out of memory.";
 "kNoAppropriateApplication" = "No appropriate application exists.";
 "kInvalidUrl" = "Invalid url.";
+"kUnsupportedDocFormat" = "The XFA document is unsupported to operate.";
+"kPasswordNotSame" = "The Document Open and Owner passwords cannot be the same,please enter a different password in either the Document Open Password field or the Owner Password field.";
+
+//Confirm - PDFView Thumbnial mode
+"kSureToDeletePage" = "Are you sure you want to delete the selected page(s)? You cannot undo this action.";
+"kNotAllowDeleteAll" = "Deleting all page(s) is not allowed";
+"kDeletePageFailed" = "Cannot delete the page(s).";
+"kMovePageFailed" = "Cannot move the page(s).";
+
 
 //File management
 "kDocuments" = "Documents";
@@ -77,6 +88,7 @@
 "kViewModeContinuous" = "Continuous";
 "kViewModeTwo" = "Facing";
 "kViewModeThumbnail" = "Thumbnail";
+"kReflow" = "Reflow";
 
 //Form
 "kForm" = "Form";
@@ -85,10 +97,11 @@
 "kExportForm" = "Export Form Data";
 "kSureToResetFormFields" = "Are you sure you want to reset all form fields?";
 "kNoFormAvailable" = "This document has no form data";
-"kImportFormSucess" = "Successfully imported data to the current document.";
+"kImportFormSuccess" = "Successfully imported data to the current document.";
 "kImportFormFailed" = "Couldn't import or access data. Please check the form data file status and retry.";
-"kExportFormSucess" = "Form data was successfully exported.";
+"kExportFormSuccess" = "Form data was successfully exported.";
 "kExportFormFailed" = "Form exporting failed.";
+"kReset" = "Reset";
 
 //Annotation
 "kAnnotation" = "Annotations";
@@ -110,6 +123,12 @@
 "kErase" = "Eraser";
 "kInsertText" = "Insert Text";
 "kReplaceText" = "Replace Text";
+"kAttachment" = "Attachment";
+
+"kGraph" = "Graph";
+"kPushpin" = "Pushpin";
+"kPaperclip" = "Paperclip";
+"kTag" = "Tag";
 
 "kTypewriter" = "Typewriter";
 "kHintTitleTypewriter" = "Tap screen to add Typewriter";
@@ -130,6 +149,49 @@
 "kSearchGoogle" = "Search in Google";
 "kSearchWiki" = "Search in Wikipedia";
 "kPage" = "Page";
+
+//Signature
+"kSignatureTitle" = "Signature";
+"kSignatureHint" = "Please sign here";
+"kSignatureHintiPhone" = "Sign here";
+"kSignatureShareTitle" = "Share Signature";
+"kSignAction" = "Sign";
+"kEditSavedSign" = "Edit Saved Signature";
+"kConfirmSign" = "After applying a signature, the signature and all other changes to the file will be saved.";
+
+"kSignListTitle" = "Signature List";
+"ksignListIconTitle" = "List";
+"kHadProtect" = "This document had been protected by Digital Signature.";
+"kCertInfo" = "Certificate information";
+"kCertSerialNum" = "Serial Number:";
+"kCertIssuer" = "Certificate Issuer:";
+"kCertStartTime" = "Valid start date:";
+"kCertEndTime" = "Valid end date:";
+"kCertEmail" = "Email Address:";
+"kSignDate" = "Signed Date:";
+"kVerifyVaildResult" = "Digital Signature is valid.";
+"kVerifyVaildModifyResult" = "The revision of the document that was covered by this signature has not been altered. However, there have been subsequent changes to the document.";
+"kVerifyInvaildResult" = "Digital Signature is invalid.";
+"kVerifyTitle" = "Verification Results";
+"kCurrentSelectCert" = "Current Certificate:";
+"kVerifySign" = "VerifyDigitalSign";
+"kSignListSectionHadCert" = " Signature with Certificate";
+"kSignListSectionWithoutCert" = "Signature without Certificate";
+"kSelectAddCert" = "+ Select certificate to add ";
+"kCertFileError" = "The certificate file error";
+"kRequestPermissionTip" = "Permissions Requesting:";
+"kPermissionCopy" = "Copying of text, images, and other content";
+"kPermissionEdit" = "Commenting, filling in form fields and signing existing signature fields";
+"kNoCert" = "No Certificate";
+
+"kFieldSignWithoutCert" = "Please select a certificate to sign this document.";
+"kAddSign" = "Sign";
+"kSignList" = "SignatureList";
+"kDeleteSign" = "Delete";
+"kOfflineCopyAlterTitle" = "Please input the password";
+"kPassWordErrorAlterTitle" = "Password is not correct. Please try again";
+"kSaveSignedDocSuccess" = "Succeed to save a new PDF document with digital signature";
+"kSaveSignedDocFailure" = "Failed to sign and save";
 
 //Selection
 "kColor" = "Color";
@@ -170,16 +232,43 @@
 "kPermission" = "Permission";
 "kPermissionPrint" = "Printing";
 "kEnable" = "Allowed";
-"kDisable" = "Disallow";
+"kDisable" = "Not Allowed";
+
+"kPwdDocumentLimitation" = "Add Document Restrictions";
+"kPwdFillForm" = "Fill Form";
+"kPwdEditDocument" = "Edit Document";
+"kPwdExtractContent" =  "Extract Content";
+
+"kDecryption" = "Remove Password";
+"kEncryptionTitle" = "Encryption";
+"kEncryptMissOpenDocPass" = "Please input password for \"Open Document\" or turn the option off.";
+"kEncryptMissOtherPass" = "Please input password for other permission, or turn the option off.";
+"kEncryptRemovePass" = "Are you sure you want to remove password for this document?";
+"kEncryptProcess" = "Encrypting...";
+"kEncryptRemove" = "Removing...";
+"kEncryptAddFail" = "Fail to encrypt this document. Do you want to try again?";
+"kEncryptRemoveFail" = "Fail to decrypt this document. Do you want to try again?";
+"kEncryptAddSuccess" = "Document encrypted successfully!";
+"kEncryptRemoveSuccess" = "This password has been removed successfully!";
+"kEncryptionSectionTitle" = "Security Options";
+"kEncryptionSectionFooter" = "- When \"Open Document\" is turned on, password is required to open the document.\n- When other permission is turned on, password is required to do the action.";
+"kEncryptionDoneNoPass" = "This document is not encrypted by any password. Do you want to encrypt it?";
+
+//EncryptOption xib
+"kCellEncryptOpenDocumentTitle" = "Open Document";
+"kCellEncryptPrintDocumentTitle" = "Print Document";
+"kCellEncryptCopyContentTitle" = "Content copying for accessibility";
+"kCellEncryptPasswordTitle" = "Password:";
 
 //others
-"kDocinfo" = "File Information";
+"kDocinfo" = "File information";
 "kFilePath" = "Path";
 "kFileAuthor" = "Author";
 "kFileSubject" = "Subject";
 "kCreateDate" = "Created";
 "kModifyDate" = "Last Modified";
 "kSecurity" = "Security";
+"kEncryption" = "File Encryption";
 "kPasswordEncryption" = "Password Protection";
 "kNoEncryption" = "No Protection";
 "kMoreTextMarkup" = "Text Markup";
@@ -201,3 +290,6 @@
 "kTimeSort" = "Time";
 "kOpen" = "Open";
 "kOtherDocumentsFile" =  "File";
+"kAttachmentMaxSize" = "This comment is too large to be attached. The maximum size is %dMB.";
+"kRequiredPlaceHolder" = "Required";
+"kOptionalPlaceHolder" = "Optional";

@@ -1,15 +1,15 @@
 /**
- * Copyright (C) 2003-2016, Foxit Software Inc..
+ * Copyright (C) 2003-2017, Foxit Software Inc..
  * All Rights Reserved.
  *
  * http://www.foxitsoftware.com
  *
- * The following code is copyrighted and is the proprietary of Foxit Software Inc.. It is not allowed to 
- * distribute any parts of Foxit Mobile PDF SDK to third party or public without permission unless an agreement 
+ * The following code is copyrighted and is the proprietary of Foxit Software Inc.. It is not allowed to
+ * distribute any parts of Foxit Mobile PDF SDK to third party or public without permission unless an agreement
  * is signed between Foxit Software Inc. and customers to explicitly grant customers permissions.
  * Review legal.txt for additional license and legal information.
-
  */
+
 #import "SettingBarController.h"
 #import "SettingBar.h"
 #import "UIExtensionsSharedHeader.h"
@@ -33,7 +33,7 @@
             screenFrame = CGRectMake(0, 0, screenFrame.size.height, screenFrame.size.width);
         }
 
-        self.settingBar = [[[SettingBar alloc] initWithPDFViewCtrl:pdfViewCtrl moreSettingBarController:self] autorelease];
+        self.settingBar = [[SettingBar alloc] initWithPDFViewCtrl:pdfViewCtrl moreSettingBarController:self];
         self.settingBar.contentView.frame = CGRectMake(0, screenFrame.size.height-250, screenFrame.size.width, DEVICE_iPHONE ? 240 : 200);
         self.settingBar.contentView.autoresizingMask = UIViewAutoresizingFlexibleLeftMargin | UIViewAutoresizingFlexibleRightMargin | UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleTopMargin;
         
@@ -43,12 +43,7 @@
     return self;
 }
 
-- (void)dealloc
-{
-    [_settingBar release];
-    
-    [super dealloc];
-}
+
 
 -(void)onLayoutModeChanged:(PDF_LAYOUT_MODE)oldLayoutMode newLayoutMode:(PDF_LAYOUT_MODE)newLayoutMode
 {

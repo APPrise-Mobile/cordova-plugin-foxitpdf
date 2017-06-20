@@ -1,15 +1,15 @@
 /**
- * Copyright (C) 2003-2016, Foxit Software Inc..
+ * Copyright (C) 2003-2017, Foxit Software Inc..
  * All Rights Reserved.
  *
  * http://www.foxitsoftware.com
  *
- * The following code is copyrighted and is the proprietary of Foxit Software Inc.. It is not allowed to 
- * distribute any parts of Foxit Mobile PDF SDK to third party or public without permission unless an agreement 
+ * The following code is copyrighted and is the proprietary of Foxit Software Inc.. It is not allowed to
+ * distribute any parts of Foxit Mobile PDF SDK to third party or public without permission unless an agreement
  * is signed between Foxit Software Inc. and customers to explicitly grant customers permissions.
  * Review legal.txt for additional license and legal information.
-
  */
+
 #import <UIKit/UIKit.h>
 #import "AnnotationListCell.h"
 #import "AnnotationListViewController.h"
@@ -35,21 +35,21 @@
         [self.contentView addSubview:buttonViewLevel];
         
         
-        UIImageView* imageViewAnnotation = [[[UIImageView alloc] initWithFrame:CELL_ANNOTATIONIMAGEVIEW] autorelease];
+        UIImageView* imageViewAnnotation = [[UIImageView alloc] initWithFrame:CELL_ANNOTATIONIMAGEVIEW];
         imageViewAnnotation.tag=99;
         [self.contentView addSubview:imageViewAnnotation];
         
-        UIImageView* annoupdatetip=[[[UIImageView alloc]initWithFrame:CELL_ANNOTATIONUPDATEVIEW]autorelease];
+        UIImageView* annoupdatetip=[[UIImageView alloc]initWithFrame:CELL_ANNOTATIONUPDATEVIEW];
         annoupdatetip.tag=108;
         annoupdatetip.image=[UIImage imageNamed:@"annoupdatetip"];
         [self.contentView addSubview:annoupdatetip];
         
-        UIImageView* annouprepltip=[[[UIImageView alloc]initWithFrame:CELL_ANNOTATIONREPLYTIP]autorelease];
+        UIImageView* annouprepltip=[[UIImageView alloc]initWithFrame:CELL_ANNOTATIONREPLYTIP];
         annouprepltip.tag=109;
         annouprepltip.image=[UIImage imageNamed:@"panel_annotation_reply"];
         [self.contentView addSubview:annouprepltip];
         
-        UILabel* labelAuthor = [[[UILabel alloc] init] autorelease];
+        UILabel* labelAuthor = [[UILabel alloc] init];
         labelAuthor.tag=102;
         [labelAuthor setTextColor:[UIColor blackColor]];
         [labelAuthor setFont:[UIFont systemFontOfSize:13]];
@@ -60,7 +60,7 @@
         [self.contentView addSubview:labelAuthor];
         
         
-        UILabel* labelDate = [[[UILabel alloc] init] autorelease];
+        UILabel* labelDate = [[UILabel alloc] init];
         labelDate.tag=103;
         [labelDate setTextColor:[UIColor darkGrayColor]];
         [labelDate setFont:[UIFont systemFontOfSize:8]];
@@ -70,7 +70,7 @@
         [self.contentView addSubview:labelDate];
         
         
-        UILabel* labelContents = [[[UILabel alloc] init] autorelease];
+        UILabel* labelContents = [[UILabel alloc] init];
         labelContents.lineBreakMode=NSLineBreakByWordWrapping;
         labelContents.textAlignment=NSTextAlignmentLeft;
         labelContents.tag=104;
@@ -87,7 +87,7 @@
         [labelContents setFont:[UIFont systemFontOfSize:13]];
         [self.contentView addSubview:labelContents];
         
-        UITextView* edititextview=[[[UITextView alloc]init] autorelease];
+        UITextView* edititextview=[[UITextView alloc]init];
         edititextview.autoresizingMask = UIViewAutoresizingNone;
         edititextview.hidden=YES;
         edititextview.backgroundColor = [UIColor clearColor];
@@ -172,11 +172,15 @@
     if ([self.delegate isKindOfClass:[ReplyTableViewController class]]) {
         ReplyTableViewController *viewList = (ReplyTableViewController *)self.delegate;
         if (viewList.isShowMore) {
-            [UIView animateWithDuration:0.3 animations:^{
-                CGRect gestureRect = _belowView.frame;
-                gestureRect.origin.x = gestureRect.origin.x + _belowView.gestureView.frame.size.width;
-                _belowView.frame = gestureRect;
-            }];
+            //if vsible.
+            if(fabs(_belowView.frame.origin.x) <= 0.001)
+            {
+                [UIView animateWithDuration:0.3 animations:^{
+                    CGRect gestureRect = _belowView.frame;
+                    gestureRect.origin.x = gestureRect.origin.x + _belowView.gestureView.frame.size.width;
+                    _belowView.frame = gestureRect;
+                }];
+            }
         }
         viewList.isShowMore = YES;
         [_belowView setCellViewHidden:NO  isMenu:YES];
@@ -192,11 +196,15 @@
     {
         AnnotationListViewController *viewList = (AnnotationListViewController *)self.delegate;
         if (viewList.isShowMore) {
-            [UIView animateWithDuration:0.3 animations:^{
-                CGRect gestureRect = _belowView.frame;
-                gestureRect.origin.x = gestureRect.origin.x + _belowView.gestureView.frame.size.width;
-                _belowView.frame = gestureRect;
-            }];
+            //if vsible.
+            if(fabs(_belowView.frame.origin.x) <= 0.001)
+            {
+                [UIView animateWithDuration:0.3 animations:^{
+                    CGRect gestureRect = _belowView.frame;
+                    gestureRect.origin.x = gestureRect.origin.x + _belowView.gestureView.frame.size.width;
+                    _belowView.frame = gestureRect;
+                }];
+            }
             
         }
         

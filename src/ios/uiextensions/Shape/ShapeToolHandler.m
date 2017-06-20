@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2003-2016, Foxit Software Inc..
+ * Copyright (C) 2003-2017, Foxit Software Inc..
  * All Rights Reserved.
  *
  * http://www.foxitsoftware.com
@@ -16,9 +16,9 @@
 
 @interface ShapeToolHandler ()
 
-@property (nonatomic, retain) FSPointF* startPoint;
-@property (nonatomic, retain) FSPointF* endPoint;
-@property (nonatomic, retain) FSAnnot *annot;
+@property (nonatomic, strong) FSPointF* startPoint;
+@property (nonatomic, strong) FSPointF* endPoint;
+@property (nonatomic, strong) FSAnnot *annot;
 
 @end
 
@@ -41,13 +41,7 @@
     return self;
 }
 
--(void)dealloc
-{
-    [_startPoint release];
-    [_endPoint release];
-    [_annot release];
-    [super dealloc];
-}
+
 
 -(NSString*)getName
 {
@@ -120,14 +114,9 @@
         return YES;
     }
     [annot resetAppearanceStream];
-    Task *task = [[[Task alloc] init] autorelease];
-    task.run = ^(){
-        [_extensionsManager onAnnotAdded:page annot:annot];
-        CGRect rect = [_pdfViewCtrl convertPdfRectToPageViewRect:dibRect pageIndex:pageIndex];
-        rect = CGRectInset(rect, -20, -20);
-        [_pdfViewCtrl refresh:rect pageIndex:pageIndex];
-    };
-    [_extensionsManager.taskServer executeSync:task];
+
+    id<IAnnotHandler> annotHandler = [_extensionsManager getAnnotHandlerByType:self.type];
+    [annotHandler addAnnot:annot addUndo:YES];
     
     return YES;
 }
@@ -146,7 +135,7 @@
     if (self.startPoint && self.endPoint) {
         dibRect = [Utility convertToFSRect:self.startPoint p2:self.endPoint];
     } else {
-        dibRect = [[[FSRectF alloc] init] autorelease];
+        dibRect = [[FSRectF alloc] init];
         [dibRect set:dibPoint.x bottom:dibPoint.y right:dibPoint.x+0.1 top:dibPoint.y+0.1];
     }
     if (recognizer.state == UIGestureRecognizerStateBegan)
@@ -183,7 +172,8 @@
     {
         if (self.annot) {
             [self.annot resetAppearanceStream];
-            [_extensionsManager onAnnotAdded:[self.annot getPage] annot:self.annot];
+            id<IAnnotHandler> annotHandler = [_extensionsManager getAnnotHandlerByType:self.type];
+            [annotHandler addAnnot:self.annot addUndo:YES];
         }
         return YES;
     }
