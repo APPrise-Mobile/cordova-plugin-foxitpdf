@@ -50,9 +50,6 @@
         <header-file src="src/ios/FoxitSource/Annotation/StampModule.h" />
         <source-file src="src/ios/FoxitSource/Annotation/StampModule.m" />
 
-        <resource-file src="src/ios/FoxitSource/Base.lproj/LaunchScreen.storyboard" />
-        <resource-file src="src/ios/FoxitSource/Base.lproj/Main.storyboard" />
-
         <header-file src="src/ios/FoxitSource/Home/Document/DmFileDescriptor.h" />
         <source-file src="src/ios/FoxitSource/Home/Document/DmFileDescriptor.m" />
         <header-file src="src/ios/FoxitSource/Home/Document/DocumentModule.h" />
