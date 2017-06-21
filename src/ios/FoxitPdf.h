@@ -12,6 +12,9 @@
 
 @interface FoxitPdf : CDVPlugin
 
++ (id <CDVCommandDelegate>) getCordovaCommandDelegate;
++ (void) setCordovaCommandDelegate:(id <CDVCommandDelegate>)newCordovaCommandDelegate;
+
 + (UIViewController*)getCordovaViewCtrl;
 + (void)setCordovaViewCtrl:(UIViewController*)newCordovaViewCtrl;
 
@@ -20,6 +23,9 @@
 
 + (ReadFrame*)getReadFrame;
 + (void)setReadFrame:(ReadFrame*)newReadFrame;
+
++ (NSString*)getTmpCommandCallbackID;
++ (void)setTmpCommandCallbackID:(NSString*)newTmpCommandCallbackID;
 
 + (NSString*)getFilePath;
 + (void)setFilePath:(NSString*)newFilePath;
@@ -34,5 +40,6 @@
 + (void)setIsFileEdited:(BOOL)newIsFileEdited;
 
 + (BOOL)openPDFAtPath:(NSString*)path withPassword:(NSString*)password;
++ (void)close;
 
 @end

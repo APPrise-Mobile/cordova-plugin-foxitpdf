@@ -2,6 +2,7 @@
 
 #import "FoxitPdf.h"
 
+static id <CDVCommandDelegate> cordovaCommandDelegate;
 static UIViewController* cordovaViewCtrl = nil;
 static FSPDFViewCtrl* pdfViewCtrl = nil;
 static ReadFrame* readFrame = nil;
@@ -9,11 +10,9 @@ static NSString* filePath = nil;
 static NSString* password = nil;
 static BOOL isScreenLocked = FALSE;
 static BOOL isFiledEdited = FALSE;
+static NSString* tmpCommandCallbackID;
 
 @implementation FoxitPdf
-{
-    NSString *tmpCommandCallbackID;
-}
 
 + (UIViewController*)getCordovaViewCtrl {
   return cordovaViewCtrl;
@@ -22,6 +21,16 @@ static BOOL isFiledEdited = FALSE;
 + (void)setCordovaViewCtrl:(UIViewController*)newCordovaViewCtrl {
   if(cordovaViewCtrl != newCordovaViewCtrl) {
     cordovaViewCtrl = newCordovaViewCtrl;
+  }
+}
+
++ (id <CDVCommandDelegate>) getCordovaCommandDelegate {
+  return cordovaCommandDelegate;
+}
+
++ (void) setCordovaCommandDelegate:(id <CDVCommandDelegate>)newCordovaCommandDelegate {
+  if(cordovaCommandDelegate != newCordovaCommandDelegate) {
+    cordovaCommandDelegate = newCordovaCommandDelegate;
   }
 }
 
@@ -42,6 +51,15 @@ static BOOL isFiledEdited = FALSE;
 + (void)setReadFrame:(ReadFrame*)newReadFrame {
     if(readFrame != newReadFrame) {
         readFrame = newReadFrame;
+    }
+}
+
++ (NSString*)getTmpCommandCallbackID {
+    return tmpCommandCallbackID;
+}
++ (void)setTmpCommandCallbackID:(NSString*)newTmpCommandCallbackID {
+    if(tmpCommandCallbackID != newTmpCommandCallbackID) {
+        tmpCommandCallbackID = newTmpCommandCallbackID;
     }
 }
 
@@ -81,6 +99,13 @@ static BOOL isFiledEdited = FALSE;
     if(isFiledEdited != newIsFileEdited) {
         isFiledEdited = newIsFileEdited;
     }
+}
+
++ (void)close {
+    NSString *tmpCommandCallbackID = [FoxitPdf getTmpCommandCallbackID];
+    CDVPluginResult *pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsString:@"preview success"];
+    [[FoxitPdf getCordovaCommandDelegate] sendPluginResult:pluginResult callbackId:tmpCommandCallbackID];
+    [[FoxitPdf getCordovaViewCtrl] dismissViewControllerAnimated:YES completion:nil];
 }
 
 + (BOOL)openPDFAtPath:(NSString*)path withPassword:(NSString*)password
@@ -123,12 +148,7 @@ static BOOL isFiledEdited = FALSE;
     CDVPluginResult *pluginResult = nil;
 
     [FoxitPdf setCordovaViewCtrl:self.viewController];
-
-    FSPDFViewCtrl *pdfViewCtrl = [[FSPDFViewCtrl alloc] initWithFrame:[[UIScreen mainScreen] bounds]];
-    [FoxitPdf setPdfViewCtrl:pdfViewCtrl];
-
-    ReadFrame *readFrame = [[ReadFrame alloc] initWithPdfViewCtrl:pdfViewCtrl];
-    [FoxitPdf setReadFrame:readFrame];
+    [FoxitPdf setCordovaCommandDelegate:self.commandDelegate];
 
     // URL
     NSString *serial = [command.arguments objectAtIndex:0];
@@ -145,73 +165,31 @@ static BOOL isFiledEdited = FALSE;
 
 - (void)Preview:(CDVInvokedUrlCommand*)command
 {
-    CDVPluginResult *pluginResult = nil;
-
     // URL
     NSString *filePath = [command.arguments objectAtIndex:0];
+    NSString *readOnly = [command.arguments objectAtIndex:1];
+
+    FSPDFViewCtrl *pdfViewCtrl = [[FSPDFViewCtrl alloc] initWithFrame:[[UIScreen mainScreen] bounds]];
+    [FoxitPdf setPdfViewCtrl:pdfViewCtrl];
+    ReadFrame *readFrame = [[ReadFrame alloc] initWithPdfViewCtrl:pdfViewCtrl isReadOnly:[readOnly boolValue] == YES];
+    [FoxitPdf setReadFrame:readFrame];
 
     // check file exist
     NSURL *fileURL = [[NSURL alloc] initWithString:filePath];
     BOOL isFileExist = [self isExistAtPath:fileURL.path];
 
     if (filePath != nil && filePath.length > 0  && isFileExist) {
+        [FoxitPdf setTmpCommandCallbackID:command.callbackId];
         [FoxitPdf openPDFAtPath:fileURL.path withPassword:nil];
-
-        // result object
-        pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsString:@"preview success"];
-        tmpCommandCallbackID = command.callbackId;
     } else {
         NSString* errMsg = [NSString stringWithFormat:@"file not find"];
         UIAlertView* alert = [[UIAlertView alloc] initWithTitle:@"Error" message:errMsg delegate:nil cancelButtonTitle:@"OK" otherButtonTitles:nil, nil];
         [alert show];
 
-        pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR  messageAsString:@"file not found"];
+        CDVPluginResult *pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR  messageAsString:@"file not found"];
+        [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
     }
 
-    [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
-
-}
-
-# pragma mark -- Foxit preview
--(void)FoxitPdfPreview:(NSString *)filePath {
-    // DEMO_APPDELEGATE.filePath = filePath;
-		//
-    // //load doc
-    // if (filePath == nil) {
-    //     return;
-    // }
-		//
-    // FSPDFDoc* doc = [FSPDFDoc createFromFilePath:filePath];
-		//
-    // if (e_errSuccess!=[doc load:nil]) {
-    //     return;
-    // }
-		//
-    // //init PDFViewerCtrl
-    // FSPDFViewCtrl* pdfViewCtrl;
-    // pdfViewCtrl = [[FSPDFViewCtrl alloc] initWithFrame:[[UIScreen mainScreen] bounds]];
-    // [pdfViewCtrl setDoc:doc];
-		//
-    // self.readFrame = [[ReadFrame alloc] initWithPdfViewCtrl:pdfViewCtrl];
-    // [pdfViewCtrl registerDocEventListener:self.readFrame];
-		//
-    // UIViewController *navCtr = [[UIViewController alloc] init];
-    // [navCtr.view addSubview:pdfViewCtrl];
-    // navCtr.view.backgroundColor = [UIColor whiteColor];
-    // //    navCtr.modalPresentationStyle = UIModalPresentationFullScreen;
-		//
-    // pdfViewCtrl.autoresizesSubviews = YES;
-    // pdfViewCtrl.autoresizingMask = UIViewAutoresizingFlexibleTopMargin | UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
-		//
-		//
-    // self.readFrame.CordovaPluginViewController = navCtr;
-		//
-    // [self.viewController presentViewController:navCtr animated:YES completion:nil];
-}
-
-# pragma mark -- close preview
--(void)close{
-    [self.viewController dismissViewControllerAnimated:YES completion:nil];
 }
 
 # pragma mark -- isExistAtPath

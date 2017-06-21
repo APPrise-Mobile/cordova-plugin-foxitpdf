@@ -68,7 +68,7 @@ static ReadFrame* _instance = nil;
     return _instance;
 }
 
--(id)initWithPdfViewCtrl:(FSPDFViewCtrl *)pdfViewCtrl
+-(id)initWithPdfViewCtrl:(FSPDFViewCtrl *)pdfViewCtrl isReadOnly:(BOOL)isReadOnly
 {
     if (self = [super init])
     {
@@ -78,6 +78,7 @@ static ReadFrame* _instance = nil;
         self.stateChangeListeners = [NSMutableArray array];
         self.currentState = STATE_NORMAL;
         self.pdfViewCtrl = pdfViewCtrl;
+        self.isReadOnly = isReadOnly;
         [pdfViewCtrl registerDocEventListener:self];
         [pdfViewCtrl registerLayoutChangedEventListener:self];
 
@@ -110,22 +111,24 @@ static ReadFrame* _instance = nil;
 
         NSMutableArray* modules = [NSMutableArray array];
         [modules addObject:[[PageNavigationModule alloc] initWithUIExtensionsManager:_extensionsMgr readFrame:self]];
-        [modules addObject:[[MarkupModule alloc] initWithUIExtensionsManager:_extensionsMgr readFrame:self]];
-        [modules addObject:[[NoteModule alloc] initWithUIExtensionsManager:_extensionsMgr readFrame:self]];
-        [modules addObject:[[UndoModule alloc] initWithUIExtensionsManager:_extensionsMgr readFrame:self]];
         [modules addObject:[[MoreModule alloc] initWithViewCtrl:self.pdfViewCtrl readFrame:self]];
-        [modules addObject:[[FormModule alloc] initWithViewCtrl:self.pdfViewCtrl readFrame:self]];
-        [modules addObject:[[ShapeModule alloc] initWithUIExtensionsManager:_extensionsMgr readFrame:self]];
-        [modules addObject:[[FreetextModule alloc] initWithUIExtensionsManager:_extensionsMgr readFrame:self]];
-        [modules addObject:[[PencilModule alloc] initWithUIExtensionsManager:_extensionsMgr readFrame:self]];
-        [modules addObject:[[EraseModule alloc] initWithUIExtensionsManager:_extensionsMgr readFrame:self]];
-        [modules addObject:[[LineModule alloc] initWithUIExtensionsManager:_extensionsMgr readFrame:self]];
-        [modules addObject:[[StampModule alloc] initWithUIExtensionsManager:_extensionsMgr readFrame:self]];
-        [modules addObject:[[ReplaceModule alloc] initWithUIExtensionsManager:_extensionsMgr readFrame:self]];
-        [modules addObject:[[InsertModule alloc] initWithUIExtensionsManager:_extensionsMgr readFrame:self]];
-        [modules addObject:[[AttachmentModule alloc] initWithUIExtensionsManager:_extensionsMgr readFrame:self]];
         [modules addObject:[[ReflowModule alloc] initWithUIExtensionsManager:_extensionsMgr readFrame:self]];
-        [modules addObject:[[SignatureModule alloc] initWithUIExtensionsManager:_extensionsMgr readFrame:self]];
+        if(!self.isReadOnly) {
+            [modules addObject:[[MarkupModule alloc] initWithUIExtensionsManager:_extensionsMgr readFrame:self]];
+            [modules addObject:[[NoteModule alloc] initWithUIExtensionsManager:_extensionsMgr readFrame:self]];
+            [modules addObject:[[UndoModule alloc] initWithUIExtensionsManager:_extensionsMgr readFrame:self]];
+            [modules addObject:[[FormModule alloc] initWithViewCtrl:self.pdfViewCtrl readFrame:self]];
+            [modules addObject:[[ShapeModule alloc] initWithUIExtensionsManager:_extensionsMgr readFrame:self]];
+            [modules addObject:[[FreetextModule alloc] initWithUIExtensionsManager:_extensionsMgr readFrame:self]];
+            [modules addObject:[[PencilModule alloc] initWithUIExtensionsManager:_extensionsMgr readFrame:self]];
+            [modules addObject:[[EraseModule alloc] initWithUIExtensionsManager:_extensionsMgr readFrame:self]];
+            [modules addObject:[[LineModule alloc] initWithUIExtensionsManager:_extensionsMgr readFrame:self]];
+            [modules addObject:[[StampModule alloc] initWithUIExtensionsManager:_extensionsMgr readFrame:self]];
+            [modules addObject:[[ReplaceModule alloc] initWithUIExtensionsManager:_extensionsMgr readFrame:self]];
+            [modules addObject:[[InsertModule alloc] initWithUIExtensionsManager:_extensionsMgr readFrame:self]];
+            [modules addObject:[[AttachmentModule alloc] initWithUIExtensionsManager:_extensionsMgr readFrame:self]];
+            [modules addObject:[[SignatureModule alloc] initWithUIExtensionsManager:_extensionsMgr readFrame:self]];
+        }
         self.passwordModule = [[PasswordModule alloc] initWithExtensionsManager:_extensionsMgr readFrame:self];
         [modules addObject:self.passwordModule];
         self.modules = modules;
@@ -228,9 +231,7 @@ static ReadFrame* _instance = nil;
         }
 
         if (![weakSelf.pdfViewCtrl.currentDoc isModified]) {
-            UIWindow *keyWindow = [[UIApplication sharedApplication] keyWindow];
-            UIViewController *rootViewController = keyWindow.rootViewController;
-            [rootViewController dismissViewControllerAnimated:YES completion:nil];
+            [FoxitPdf close];
             [weakSelf.pdfViewCtrl closeDoc:nil];
         }
         else
@@ -356,23 +357,25 @@ static ReadFrame* _instance = nil;
     };
     [self.bottomToolbar addItem:readmodeItem displayPosition:Position_CENTER];
 
-    UIImage *readAnnotImg = [UIImage imageNamed:@"read_annot"];
-    self.annotItem = [TbBaseItem createItemWithImageAndTitle:NSLocalizedString(@"kReadComment", nil) imageNormal:readAnnotImg imageSelected:readAnnotImg imageDisable:readAnnotImg background:nil imageTextRelation:RELATION_BOTTOM];
-    self.annotItem.textColor = [UIColor blackColor];
-    self.annotItem.textFont = [UIFont systemFontOfSize:9.f];
-    self.annotItem.onTapClick = ^(TbBaseItem *item){
-        if (weakSelf.extensionsMgr.currentAnnot) {
-            [weakSelf.extensionsMgr setCurrentAnnot:nil];
-        }
-        [weakSelf changeState:STATE_EDIT];
-    };
-    [self.bottomToolbar addItem:self.annotItem displayPosition:Position_CENTER];
+    if(!self.isReadOnly) {
+        UIImage *readAnnotImg = [UIImage imageNamed:@"read_annot"];
+        self.annotItem = [TbBaseItem createItemWithImageAndTitle:NSLocalizedString(@"kReadComment", nil) imageNormal:readAnnotImg imageSelected:readAnnotImg imageDisable:readAnnotImg background:nil imageTextRelation:RELATION_BOTTOM];
+        self.annotItem.textColor = [UIColor blackColor];
+        self.annotItem.textFont = [UIFont systemFontOfSize:9.f];
+        self.annotItem.onTapClick = ^(TbBaseItem *item){
+            if (weakSelf.extensionsMgr.currentAnnot) {
+                [weakSelf.extensionsMgr setCurrentAnnot:nil];
+            }
+            [weakSelf changeState:STATE_EDIT];
+        };
+        [self.bottomToolbar addItem:self.annotItem displayPosition:Position_CENTER];
 
-    UIImage *signatureImg = [UIImage imageNamed:@"signature"];
-    self.signatureItem = [TbBaseItem createItemWithImageAndTitle:NSLocalizedString(@"kSignatureTitle", nil) imageNormal:signatureImg imageSelected:signatureImg imageDisable:signatureImg background:nil imageTextRelation:RELATION_BOTTOM];
-    self.signatureItem.textColor = [UIColor blackColor];
-    self.signatureItem.textFont = [UIFont systemFontOfSize:9.f];
-    [self.bottomToolbar addItem:self.signatureItem displayPosition:Position_CENTER];
+        UIImage *signatureImg = [UIImage imageNamed:@"signature"];
+        self.signatureItem = [TbBaseItem createItemWithImageAndTitle:NSLocalizedString(@"kSignatureTitle", nil) imageNormal:signatureImg imageSelected:signatureImg imageDisable:signatureImg background:nil imageTextRelation:RELATION_BOTTOM];
+        self.signatureItem.textColor = [UIColor blackColor];
+        self.signatureItem.textFont = [UIFont systemFontOfSize:9.f];
+        [self.bottomToolbar addItem:self.signatureItem displayPosition:Position_CENTER];
+    }
 
 
     panelItem.contentView.center = CGPointMake(SCREENWIDTH/5, 25);
@@ -399,9 +402,7 @@ static ReadFrame* _instance = nil;
     self.popover = nil;
     [FoxitPdf setIsFileEdited:YES];
     _isDocModified = NO;
-    UIWindow *keyWindow = [[UIApplication sharedApplication] keyWindow];
-    UIViewController *rootViewController = keyWindow.rootViewController;
-    [rootViewController dismissViewControllerAnimated:YES completion:nil];
+    [FoxitPdf close];
 
     NSString* tmpPath = nil;
     NSString* filePath = [FoxitPdf getFilePath];
@@ -435,9 +436,7 @@ static ReadFrame* _instance = nil;
     self.popover = nil;
     [FoxitPdf setIsFileEdited:NO];
     _isDocModified = NO;
-    UIWindow *keyWindow = [[UIApplication sharedApplication] keyWindow];
-    UIViewController *rootViewController = keyWindow.rootViewController;
-    [rootViewController dismissViewControllerAnimated:YES completion:nil];
+    [FoxitPdf close];
     [self.pdfViewCtrl closeDoc:nil];
 }
 
@@ -1206,6 +1205,7 @@ static ReadFrame* _instance = nil;
 {
     [self updateBookmarkButtonState];
 }
+
 
 
 - (void)dealloc
