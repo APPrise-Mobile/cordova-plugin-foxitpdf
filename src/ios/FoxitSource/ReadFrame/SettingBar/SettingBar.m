@@ -36,6 +36,10 @@
 @property (nonatomic, assign) BOOL isNightMode;
 @property (nonatomic, assign) BOOL isScreenLocked;
 
+@property (nonatomic, assign) BOOL isBrightnessEnabled;
+@property (nonatomic, assign) BOOL isScreenLockEnabled;
+@property (nonatomic, assign) BOOL isThumbnailEnabled;
+
 @end
 
 @implementation SettingBar
@@ -43,7 +47,7 @@
 
 
 
-- (instancetype)initWithPDFViewCtrl:(FSPDFViewCtrl*)pdfViewCtrl moreSettingBarController:(SettingBarController*)moreSettingBarController
+- (instancetype)initWithPDFViewCtrl:(FSPDFViewCtrl*)pdfViewCtrl moreSettingBarController:(SettingBarController*)moreSettingBarController options:(NSDictionary*)options
 {
     self = [super init];
     if (self) {
@@ -52,6 +56,9 @@
         _isBrightnessManual = NO;
         _isNightMode = NO;
         _isScreenLocked = NO;
+        _isThumbnailEnabled = [[options valueForKey:@"isThumbnailEnabled"] boolValue];
+        _isScreenLockEnabled = [[options valueForKey:@"isScreenLockEnabled"] boolValue];
+        _isBrightnessEnabled = [[options valueForKey:@"isBrightnessEnabled"] boolValue];
         self.isEnterBg = NO;
         self.isActive = NO;
 
@@ -95,17 +102,19 @@
         self.continueView_iphone.autoresizingMask = UIViewAutoresizingFlexibleLeftMargin| UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleRightMargin;
         [self.continueView_iphone addTarget:self action:@selector(continueClicked) forControlEvents:UIControlEventTouchUpInside];
 
-        self.thumbnailView_iphone = [UIButton buttonWithType:UIButtonTypeCustom];
-        [self.thumbnailView_iphone setBackgroundImage:viewbgNormal forState:UIControlStateNormal];
-        [self.thumbnailView_iphone setBackgroundImage:viewSelected forState:UIControlStateHighlighted];
-        [self.thumbnailView_iphone setBackgroundImage:viewSelected forState:UIControlStateSelected];
-        [self.thumbnailView_iphone setTitle:NSLocalizedString(@"kViewModeThumbnail", nil) forState:UIControlStateNormal];
-        self.thumbnailView_iphone.titleLabel.font = [UIFont systemFontOfSize:12.0f];
-        [self.thumbnailView_iphone setTitleColor:[UIColor blackColor] forState:UIControlStateNormal];
-        [self.thumbnailView_iphone setTitleColor:[UIColor whiteColor] forState:UIControlStateHighlighted];
-        [self.thumbnailView_iphone setTitleColor:[UIColor whiteColor] forState:UIControlStateSelected];
-        self.thumbnailView_iphone.autoresizingMask = UIViewAutoresizingFlexibleLeftMargin| UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleRightMargin;
-        [self.thumbnailView_iphone addTarget:self action:@selector(thumbnailClicked) forControlEvents:UIControlEventTouchUpInside];
+        if(_isThumbnailEnabled) {
+          self.thumbnailView_iphone = [UIButton buttonWithType:UIButtonTypeCustom];
+          [self.thumbnailView_iphone setBackgroundImage:viewbgNormal forState:UIControlStateNormal];
+          [self.thumbnailView_iphone setBackgroundImage:viewSelected forState:UIControlStateHighlighted];
+          [self.thumbnailView_iphone setBackgroundImage:viewSelected forState:UIControlStateSelected];
+          [self.thumbnailView_iphone setTitle:NSLocalizedString(@"kViewModeThumbnail", nil) forState:UIControlStateNormal];
+          self.thumbnailView_iphone.titleLabel.font = [UIFont systemFontOfSize:12.0f];
+          [self.thumbnailView_iphone setTitleColor:[UIColor blackColor] forState:UIControlStateNormal];
+          [self.thumbnailView_iphone setTitleColor:[UIColor whiteColor] forState:UIControlStateHighlighted];
+          [self.thumbnailView_iphone setTitleColor:[UIColor whiteColor] forState:UIControlStateSelected];
+          self.thumbnailView_iphone.autoresizingMask = UIViewAutoresizingFlexibleLeftMargin| UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleRightMargin;
+          [self.thumbnailView_iphone addTarget:self action:@selector(thumbnailClicked) forControlEvents:UIControlEventTouchUpInside];
+        }
 
 
         self.singleView_ipad = [SettingBar createItemWithImageAndTitle:NSLocalizedString(@"kViewModeSingle", nil) imageNormal:[UIImage imageNamed:@"readview_single_normal"] imageSelected:[UIImage imageNamed:@"readview_single_selected"] imageDisable:[UIImage imageNamed:@"readview_single_selected"]];
@@ -118,8 +127,10 @@
         self.doubleView_ipad = [SettingBar createItemWithImageAndTitle:NSLocalizedString(@"kViewModeTwo", nil) imageNormal:[UIImage imageNamed:@"readview_double_normal"] imageSelected:[UIImage imageNamed:@"readview_double_selected"] imageDisable:[UIImage imageNamed:@"readview_double_selected"]];
         [self.doubleView_ipad addTarget:self action:@selector(doubleClicked) forControlEvents:UIControlEventTouchUpInside];
 
-        self.thumbnailView_ipad = [SettingBar createItemWithImageAndTitle:NSLocalizedString(@"kViewModeThumbnail", nil) imageNormal:[UIImage imageNamed:@"readview_thumail_normal"] imageSelected:[UIImage imageNamed:@"readview_thumail_selected"] imageDisable:[UIImage imageNamed:@"readview_thumail_selected"]];
-        [self.thumbnailView_ipad addTarget:self action:@selector(thumbnailClicked) forControlEvents:UIControlEventTouchUpInside];
+        if(_isThumbnailEnabled) {
+          self.thumbnailView_ipad = [SettingBar createItemWithImageAndTitle:NSLocalizedString(@"kViewModeThumbnail", nil) imageNormal:[UIImage imageNamed:@"readview_thumail_normal"] imageSelected:[UIImage imageNamed:@"readview_thumail_selected"] imageDisable:[UIImage imageNamed:@"readview_thumail_selected"]];
+          [self.thumbnailView_ipad addTarget:self action:@selector(thumbnailClicked) forControlEvents:UIControlEventTouchUpInside];
+        }
 
         self.reflowBtn = [SettingBar createItemWithImageAndTitle:NSLocalizedString(@"kReflow", nil) imageNormal:[UIImage imageNamed:@"readview_reflow_normal"] imageSelected:[UIImage imageNamed:@"readview_reflow_selected"] imageDisable:[UIImage imageNamed:@"readview_reflow_selected"]];
         [self.reflowBtn addTarget:self action:@selector(reflowClicked) forControlEvents:UIControlEventTouchUpInside];
@@ -130,7 +141,9 @@
         if (!DEVICE_iPHONE) {
             self.singleView_ipad.autoresizingMask = UIViewAutoresizingFlexibleLeftMargin | UIViewAutoresizingFlexibleRightMargin;
             self.doubleView_ipad.autoresizingMask = UIViewAutoresizingFlexibleLeftMargin | UIViewAutoresizingFlexibleRightMargin;
-            self.thumbnailView_ipad.autoresizingMask = UIViewAutoresizingFlexibleLeftMargin | UIViewAutoresizingFlexibleRightMargin;
+            if(_isThumbnailEnabled) {
+              self.thumbnailView_ipad.autoresizingMask = UIViewAutoresizingFlexibleLeftMargin | UIViewAutoresizingFlexibleRightMargin;
+            }
             self.continueView_ipad.autoresizingMask = UIViewAutoresizingFlexibleLeftMargin | UIViewAutoresizingFlexibleRightMargin;
             self.reflowBtn.autoresizingMask = UIViewAutoresizingFlexibleLeftMargin | UIViewAutoresizingFlexibleRightMargin;
             self.screenLockBtn.autoresizingMask = UIViewAutoresizingFlexibleLeftMargin | UIViewAutoresizingFlexibleRightMargin;
@@ -139,7 +152,9 @@
             float viewModeWidth = (SCREENWIDTH - 15*4)/3;
             self.singleView_iphone.frame = CGRectMake(20, 10, viewModeWidth, 30);
             self.continueView_iphone.frame = CGRectMake(15 + viewModeWidth + 15, 10, viewModeWidth, 30);
-            self.thumbnailView_iphone.frame = CGRectMake(10 + (viewModeWidth + 15)*2, 10, viewModeWidth, 30);
+            if(_isThumbnailEnabled) {
+              self.thumbnailView_iphone.frame = CGRectMake(10 + (viewModeWidth + 15)*2, 10, viewModeWidth, 30);
+            }
             [self.contentView addSubview:self.singleView_iphone];
             [self.contentView addSubview:self.continueView_iphone];
             [self.contentView addSubview:self.thumbnailView_iphone];
@@ -149,10 +164,12 @@
             divideView.autoresizingMask = UIViewAutoresizingFlexibleLeftMargin | UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleRightMargin;
             [self.contentView addSubview:divideView];
 
-            UIView *divideView1 = [[UIView alloc] initWithFrame:CGRectMake(0, 170, SCREENWIDTH, [Utility realPX:1.0f])];
-            divideView1.backgroundColor = [UIColor colorWithRGBHex:0xe6e6e6];
-            divideView1.autoresizingMask = UIViewAutoresizingFlexibleLeftMargin | UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleRightMargin;
-            [self.contentView addSubview:divideView1];
+            if (_isBrightnessEnabled) {
+              UIView *divideView1 = [[UIView alloc] initWithFrame:CGRectMake(0, 170, SCREENWIDTH, [Utility realPX:1.0f])];
+              divideView1.backgroundColor = [UIColor colorWithRGBHex:0xe6e6e6];
+              divideView1.autoresizingMask = UIViewAutoresizingFlexibleLeftMargin | UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleRightMargin;
+              [self.contentView addSubview:divideView1];
+            }
 
             UIView *divideView2 = [[UIView alloc] initWithFrame:CGRectMake(SCREENWIDTH - 80, 160, [Utility realPX:1.0f], 30)];
             divideView2.center = CGPointMake(divideView2.center.x, 140);
@@ -171,12 +188,14 @@
                 self.screenLockBtn.center = CGPointMake((SCREENWIDTH-20)/12*3, self.screenLockBtn.center.y);
 
                 [self.contentView addSubview:self.reflowBtn];
-                [self.contentView addSubview:self.screenLockBtn];
+                if (_isScreenLockEnabled) {
+                  [self.contentView addSubview:self.screenLockBtn];
+                }
             }
             else
             {
                 float spaceWidth = 44;
-                self.scrollView = [[UIScrollView alloc] initWithFrame:CGRectMake(0, 180, SCREENWIDTH, 80)];
+                self.scrollView = [[UIScrollView alloc] initWithFrame:CGRectMake(0, 80, SCREENWIDTH, 80)];
                 self.scrollView.scrollEnabled = YES;
                 self.scrollView.directionalLockEnabled = NO;
                 float scrollWidth = 520;
@@ -190,7 +209,9 @@
 
                 [self.contentView addSubview:self.scrollView];
                 [self.scrollView addSubview:self.reflowBtn];
-                [self.scrollView addSubview:self.screenLockBtn];
+                if (_isScreenLockEnabled) {
+                  [self.scrollView addSubview:self.screenLockBtn];
+                }
             }
 
         }
@@ -212,10 +233,13 @@
                 self.doubleView_ipad.center = CGPointMake(10 + (SCREENWIDTH - 20)/20 * 5, self.doubleView_ipad.center.y);
 
                 tempWidth += self.doubleView_ipad.frame.size.width + spaceWidth;
-                self.thumbnailView_ipad.frame = CGRectMake(20 + tempWidth, 20, self.thumbnailView_ipad.frame.size.width, self.thumbnailView_ipad.frame.size.height);
-                self.thumbnailView_ipad.center = CGPointMake(10 + (SCREENWIDTH - 20)/20 * 7, self.thumbnailView_ipad.center.y);
 
-                tempWidth += self.thumbnailView_ipad.frame.size.width + spaceWidth;
+                if(_isThumbnailEnabled) {
+                  self.thumbnailView_ipad.frame = CGRectMake(20 + tempWidth, 20, self.thumbnailView_ipad.frame.size.width, self.thumbnailView_ipad.frame.size.height);
+                  self.thumbnailView_ipad.center = CGPointMake(10 + (SCREENWIDTH - 20)/20 * 7, self.thumbnailView_ipad.center.y);
+
+                  tempWidth += self.thumbnailView_ipad.frame.size.width + spaceWidth;
+                }
                 self.reflowBtn.frame = CGRectMake(20 + tempWidth, 20, self.reflowBtn.frame.size.width, self.reflowBtn.frame.size.height);
                 self.reflowBtn.center = CGPointMake(10 + (SCREENWIDTH - 20)/20 * 9, self.reflowBtn.center.y);
 
@@ -226,9 +250,13 @@
                 [self.contentView addSubview:self.singleView_ipad];
                 [self.contentView addSubview:self.continueView_ipad];
                 [self.contentView addSubview:self.doubleView_ipad];
-                [self.contentView addSubview:self.thumbnailView_ipad];
+                if(_isThumbnailEnabled) {
+                  [self.contentView addSubview:self.thumbnailView_ipad];
+                }
                 [self.contentView addSubview:self.reflowBtn];
-                [self.contentView addSubview:self.screenLockBtn];
+                if (_isScreenLockEnabled) {
+                  [self.contentView addSubview:self.screenLockBtn];
+                }
             }else{
                 float spaceWidth = 44;
                 self.scrollView = [[UIScrollView alloc] initWithFrame:CGRectMake(0, 20, SCREENWIDTH, 80)];
@@ -252,10 +280,13 @@
                 self.doubleView_ipad.center = CGPointMake(10 + (scrollWidth - 20)/20 * 5, self.doubleView_ipad.center.y);
 
                 tempWidth += self.doubleView_ipad.frame.size.width + spaceWidth;
-                self.thumbnailView_ipad.frame = CGRectMake(20 + tempWidth, 20, self.thumbnailView_ipad.frame.size.width, self.thumbnailView_ipad.frame.size.height);
-                self.thumbnailView_ipad.center = CGPointMake(10 + (scrollWidth - 20)/20 * 7, self.thumbnailView_ipad.center.y);
 
-                tempWidth += self.thumbnailView_ipad.frame.size.width + spaceWidth;
+                if(_isThumbnailEnabled) {
+                  self.thumbnailView_ipad.frame = CGRectMake(20 + tempWidth, 20, self.thumbnailView_ipad.frame.size.width, self.thumbnailView_ipad.frame.size.height);
+                  self.thumbnailView_ipad.center = CGPointMake(10 + (scrollWidth - 20)/20 * 7, self.thumbnailView_ipad.center.y);
+
+                  tempWidth += self.thumbnailView_ipad.frame.size.width + spaceWidth;
+                }
                 self.reflowBtn.frame = CGRectMake(20 + tempWidth, 20, self.reflowBtn.frame.size.width, self.reflowBtn.frame.size.height);
                 self.reflowBtn.center = CGPointMake(10 + (scrollWidth - 20)/20 * 9, self.reflowBtn.center.y);
 
@@ -267,9 +298,13 @@
                 [self.scrollView addSubview:self.singleView_ipad];
                 [self.scrollView addSubview:self.continueView_ipad];
                 [self.scrollView addSubview:self.doubleView_ipad];
-                [self.scrollView addSubview:self.thumbnailView_ipad];
+                if(_isThumbnailEnabled) {
+                  [self.scrollView addSubview:self.thumbnailView_ipad];
+                }
                 [self.scrollView addSubview:self.reflowBtn];
-                [self.scrollView addSubview:self.screenLockBtn];
+                if (_isScreenLockEnabled) {
+                  [self.scrollView addSubview:self.screenLockBtn];
+                }
             }
 
 
@@ -299,7 +334,9 @@
         self.brightnessLabel.center = CGPointMake(self.brightnessLabel.center.x, DEVICE_iPHONE ? 80 : 150);
         self.brightnessLabel.text = NSLocalizedString(@"kAutoBrightness", nil);
         self.brightnessLabel.font = [UIFont systemFontOfSize:15.0f];
-        [self.contentView addSubview:self.brightnessLabel];
+        if (_isBrightnessEnabled) {
+          [self.contentView addSubview:self.brightnessLabel];
+        }
 
         self.brightnessSwitch = [[UISwitch alloc] initWithFrame:CGRectMake(80 + titleSize.width + 20, 125, 100, 40)];
         if (DEVICE_iPHONE) {
@@ -311,59 +348,60 @@
 
         [self.brightnessSwitch addTarget:self action:@selector(onSwitchClicked) forControlEvents:UIControlEventValueChanged];
 
-        [self.contentView addSubview:self.brightnessSwitch];
+        if (_isBrightnessEnabled) {
+          [self.contentView addSubview:self.brightnessSwitch];
+
+          UIImage *smaller = [UIImage imageNamed:@"readview_brightness_smaller"];
+          self.brightnessSmaller = [[UIImageView alloc] initWithImage:smaller];
+          self.brightnessSmaller.frame = CGRectMake(SCREENWIDTH/3 + 50, 130, smaller.size.width, smaller.size.height);
+          if (DEVICE_iPHONE) {
+              self.brightnessSmaller.frame = CGRectMake(20, 130, smaller.size.width, smaller.size.height);
+          }
+          self.brightnessSmaller.center = CGPointMake(self.brightnessSmaller.center.x,  DEVICE_iPHONE ? 140 : 150);
+          self.brightnessSmaller.autoresizingMask = UIViewAutoresizingFlexibleLeftMargin | UIViewAutoresizingFlexibleRightMargin;
+          [self.contentView addSubview:self.brightnessSmaller];
+
+          UIImage *bigger = [UIImage imageNamed:@"readview_brightness_bigger"];
+          self.brightnessBigger = [[UIImageView alloc] initWithImage:bigger];
+          self.brightnessBigger.frame = CGRectMake(SCREENWIDTH/3 + 240, 120, bigger.size.width, bigger.size.height);
+          if (DEVICE_iPHONE) {
+              self.brightnessBigger.frame = CGRectMake(SCREENWIDTH -40 - bigger.size.width - 80 + 10, 130, bigger.size.width, bigger.size.height);
+          }
+          self.brightnessBigger.center = CGPointMake(self.brightnessBigger.center.x, DEVICE_iPHONE ? 140 : 150);
+          self.brightnessBigger.autoresizingMask = UIViewAutoresizingFlexibleLeftMargin |UIViewAutoresizingFlexibleRightMargin;
+          [self.contentView addSubview:self.brightnessBigger];
+
+          self.brightnessSlider = [[UISlider alloc] init];
+          [self.contentView addSubview:self.brightnessSlider];
+          [self.brightnessSlider mas_makeConstraints:^(MASConstraintMaker *make) {
+              make.left.equalTo(self.brightnessSmaller.mas_right).offset(10);
+              make.right.equalTo(self.brightnessBigger.mas_left).offset(-10);
+              make.centerY.equalTo(self.brightnessBigger.mas_centerY).offset(0);
+              make.height.mas_equalTo(40);
+          }];
+          [self.brightnessSlider setThumbImage:[UIImage imageNamed:@"property_linewidth_slider.png"] forState:UIControlStateNormal];
+          [self.brightnessSlider setThumbImage:[UIImage imageNamed:@"property_linewidth_slider.png"] forState:UIControlStateDisabled];
+          self.brightnessSlider.minimumValue = 0.2f;
+
+          [self.brightnessSlider addTarget:self action:@selector(sliderChangedValue) forControlEvents:UIControlEventValueChanged];
+          [self.brightnessSlider addTarget:self action:@selector(sliderChangedEndValue) forControlEvents:UIControlEventTouchUpInside];
+          self.brightnessSlider.enabled = !self.brightnessSwitch.on;
 
 
-        UIImage *smaller = [UIImage imageNamed:@"readview_brightness_smaller"];
-        self.brightnessSmaller = [[UIImageView alloc] initWithImage:smaller];
-        self.brightnessSmaller.frame = CGRectMake(SCREENWIDTH/3 + 50, 130, smaller.size.width, smaller.size.height);
-        if (DEVICE_iPHONE) {
-            self.brightnessSmaller.frame = CGRectMake(20, 130, smaller.size.width, smaller.size.height);
+          self.nightView = [UIButton buttonWithType:UIButtonTypeCustom];
+          [self.nightView setImage:[UIImage imageNamed:@"readview_night_normal"] forState:UIControlStateNormal];
+          [self.nightView setImage:[UIImage imageNamed:@"readview_night_selected"] forState:UIControlStateHighlighted];
+          [self.nightView setImage:[UIImage imageNamed:@"readview_night_selected"] forState:UIControlStateSelected];
+          self.nightView.frame = CGRectMake(SCREENWIDTH/3*2 + 80, 120, [UIImage imageNamed:@"readview_night_normal"].size.width, [UIImage imageNamed:@"readview_night_normal"].size.height);
+          if (DEVICE_iPHONE) {
+              self.nightView.frame = CGRectMake(SCREENWIDTH - 80 + 20, 180, self.nightView.frame.size.width, self.nightView.frame.size.height);
+          }
+
+          self.nightView.center = CGPointMake(self.nightView.center.x, DEVICE_iPHONE ? 140 : 150);
+          self.nightView.autoresizingMask = UIViewAutoresizingFlexibleLeftMargin |UIViewAutoresizingFlexibleRightMargin;
+          [self.nightView addTarget:self action:@selector(nightModeClicked) forControlEvents:UIControlEventTouchUpInside];
+          [self.contentView addSubview:self.nightView];
         }
-        self.brightnessSmaller.center = CGPointMake(self.brightnessSmaller.center.x,  DEVICE_iPHONE ? 140 : 150);
-        self.brightnessSmaller.autoresizingMask = UIViewAutoresizingFlexibleLeftMargin | UIViewAutoresizingFlexibleRightMargin;
-        [self.contentView addSubview:self.brightnessSmaller];
-
-        UIImage *bigger = [UIImage imageNamed:@"readview_brightness_bigger"];
-        self.brightnessBigger = [[UIImageView alloc] initWithImage:bigger];
-        self.brightnessBigger.frame = CGRectMake(SCREENWIDTH/3 + 240, 120, bigger.size.width, bigger.size.height);
-        if (DEVICE_iPHONE) {
-            self.brightnessBigger.frame = CGRectMake(SCREENWIDTH -40 - bigger.size.width - 80 + 10, 130, bigger.size.width, bigger.size.height);
-        }
-        self.brightnessBigger.center = CGPointMake(self.brightnessBigger.center.x, DEVICE_iPHONE ? 140 : 150);
-        self.brightnessBigger.autoresizingMask = UIViewAutoresizingFlexibleLeftMargin |UIViewAutoresizingFlexibleRightMargin;
-        [self.contentView addSubview:self.brightnessBigger];
-
-        self.brightnessSlider = [[UISlider alloc] init];
-        [self.contentView addSubview:self.brightnessSlider];
-        [self.brightnessSlider mas_makeConstraints:^(MASConstraintMaker *make) {
-            make.left.equalTo(self.brightnessSmaller.mas_right).offset(10);
-            make.right.equalTo(self.brightnessBigger.mas_left).offset(-10);
-            make.centerY.equalTo(self.brightnessBigger.mas_centerY).offset(0);
-            make.height.mas_equalTo(40);
-        }];
-        [self.brightnessSlider setThumbImage:[UIImage imageNamed:@"property_linewidth_slider.png"] forState:UIControlStateNormal];
-        [self.brightnessSlider setThumbImage:[UIImage imageNamed:@"property_linewidth_slider.png"] forState:UIControlStateDisabled];
-        self.brightnessSlider.minimumValue = 0.2f;
-
-        [self.brightnessSlider addTarget:self action:@selector(sliderChangedValue) forControlEvents:UIControlEventValueChanged];
-        [self.brightnessSlider addTarget:self action:@selector(sliderChangedEndValue) forControlEvents:UIControlEventTouchUpInside];
-        self.brightnessSlider.enabled = !self.brightnessSwitch.on;
-
-
-        self.nightView = [UIButton buttonWithType:UIButtonTypeCustom];
-        [self.nightView setImage:[UIImage imageNamed:@"readview_night_normal"] forState:UIControlStateNormal];
-        [self.nightView setImage:[UIImage imageNamed:@"readview_night_selected"] forState:UIControlStateHighlighted];
-        [self.nightView setImage:[UIImage imageNamed:@"readview_night_selected"] forState:UIControlStateSelected];
-        self.nightView.frame = CGRectMake(SCREENWIDTH/3*2 + 80, 120, [UIImage imageNamed:@"readview_night_normal"].size.width, [UIImage imageNamed:@"readview_night_normal"].size.height);
-        if (DEVICE_iPHONE) {
-            self.nightView.frame = CGRectMake(SCREENWIDTH - 80 + 20, 180, self.nightView.frame.size.width, self.nightView.frame.size.height);
-        }
-
-        self.nightView.center = CGPointMake(self.nightView.center.x, DEVICE_iPHONE ? 140 : 150);
-        self.nightView.autoresizingMask = UIViewAutoresizingFlexibleLeftMargin |UIViewAutoresizingFlexibleRightMargin;
-        [self.nightView addTarget:self action:@selector(nightModeClicked) forControlEvents:UIControlEventTouchUpInside];
-        [self.contentView addSubview:self.nightView];
 
         [self initValuesAndActions];
     }
@@ -753,7 +791,9 @@
             [self.singleView_ipad removeFromSuperview];
             [self.continueView_ipad removeFromSuperview];
             [self.doubleView_ipad removeFromSuperview];
-            [self.thumbnailView_ipad removeFromSuperview];
+            if(_isThumbnailEnabled) {
+              [self.thumbnailView_ipad removeFromSuperview];
+            }
             [self.reflowBtn removeFromSuperview];
             [self.screenLockBtn removeFromSuperview];
             [self.scrollView removeFromSuperview];
@@ -771,10 +811,12 @@
             self.doubleView_ipad.center = CGPointMake(10 + (SCREENWIDTH - 20)/20 * 5, self.doubleView_ipad.center.y);
 
             tempWidth += self.doubleView_ipad.frame.size.width + spaceWidth;
-            self.thumbnailView_ipad.frame = CGRectMake(20 + tempWidth, 20, self.thumbnailView_ipad.frame.size.width, self.thumbnailView_ipad.frame.size.height);
-            self.thumbnailView_ipad.center = CGPointMake(10 + (SCREENWIDTH - 20)/20 * 7, self.thumbnailView_ipad.center.y);
+            if(_isThumbnailEnabled) {
+              self.thumbnailView_ipad.frame = CGRectMake(20 + tempWidth, 20, self.thumbnailView_ipad.frame.size.width, self.thumbnailView_ipad.frame.size.height);
+              self.thumbnailView_ipad.center = CGPointMake(10 + (SCREENWIDTH - 20)/20 * 7, self.thumbnailView_ipad.center.y);
 
-            tempWidth += self.thumbnailView_ipad.frame.size.width + spaceWidth;
+              tempWidth += self.thumbnailView_ipad.frame.size.width + spaceWidth;
+            }
             self.reflowBtn.frame = CGRectMake(20 + tempWidth, 20, self.reflowBtn.frame.size.width, self.reflowBtn.frame.size.height);
             self.reflowBtn.center = CGPointMake(10 + (SCREENWIDTH - 20)/20 * 9, self.reflowBtn.center.y);
 
@@ -795,7 +837,9 @@
             [self.singleView_ipad removeFromSuperview];
             [self.continueView_ipad removeFromSuperview];
             [self.doubleView_ipad removeFromSuperview];
-            [self.thumbnailView_ipad removeFromSuperview];
+            if(_isThumbnailEnabled) {
+              [self.thumbnailView_ipad removeFromSuperview];
+            }
             [self.reflowBtn removeFromSuperview];
             [self.screenLockBtn removeFromSuperview];
             [self.scrollView removeFromSuperview];
@@ -822,10 +866,12 @@
             self.doubleView_ipad.center = CGPointMake(10 + (scrollWidth - 20)/20 * 5, self.doubleView_ipad.center.y);
 
             tempWidth += self.doubleView_ipad.frame.size.width + spaceWidth;
-            self.thumbnailView_ipad.frame = CGRectMake(20 + tempWidth, 20, self.thumbnailView_ipad.frame.size.width, self.thumbnailView_ipad.frame.size.height);
-            self.thumbnailView_ipad.center = CGPointMake(10 + (scrollWidth - 20)/20 * 7, self.thumbnailView_ipad.center.y);
+            if(_isThumbnailEnabled) {
+              self.thumbnailView_ipad.frame = CGRectMake(20 + tempWidth, 20, self.thumbnailView_ipad.frame.size.width, self.thumbnailView_ipad.frame.size.height);
+              self.thumbnailView_ipad.center = CGPointMake(10 + (scrollWidth - 20)/20 * 7, self.thumbnailView_ipad.center.y);
 
-            tempWidth += self.thumbnailView_ipad.frame.size.width + spaceWidth;
+              tempWidth += self.thumbnailView_ipad.frame.size.width + spaceWidth;
+            }
             self.reflowBtn.frame = CGRectMake(20 + tempWidth, 20, self.reflowBtn.frame.size.width, self.reflowBtn.frame.size.height);
             self.reflowBtn.center = CGPointMake(10 + (scrollWidth - 20)/20 * 9, self.reflowBtn.center.y);
 
@@ -837,7 +883,9 @@
             [self.scrollView addSubview:self.singleView_ipad];
             [self.scrollView addSubview:self.continueView_ipad];
             [self.scrollView addSubview:self.doubleView_ipad];
-            [self.scrollView addSubview:self.thumbnailView_ipad];
+            if(_isThumbnailEnabled) {
+              [self.scrollView addSubview:self.thumbnailView_ipad];
+            }
             [self.scrollView addSubview:self.reflowBtn];
             [self.scrollView addSubview:self.screenLockBtn];
          }

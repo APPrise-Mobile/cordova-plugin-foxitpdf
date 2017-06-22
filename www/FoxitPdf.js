@@ -6,8 +6,8 @@ pdf.prototype.init = function(serial, key, success, error) {
     exec(success, error, "FoxitPdf", "init", [serial, key]);
 };
 
-pdf.prototype.openPDFAtPath =  function(filePath, isReadOnly, success, error) {
-    exec(success, error, "FoxitPdf", "Preview", [filePath, isReadOnly]);
+pdf.prototype.openPDFAtPath =  function(filePath, options, success, error) {
+    exec(success, error, "FoxitPdf", "openPdf", [filePath, options]);
 };
 
 var pdf = new pdf();

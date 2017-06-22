@@ -83,7 +83,7 @@ typedef void (^ AnnotAuthorCallBack)();
 @property (nonatomic, assign) BOOL isReadOnly;
 
 +(instancetype)sharedInstance;
--(id)initWithPdfViewCtrl:(FSPDFViewCtrl *)pdfViewCtrl isReadOnly:(BOOL)isReadOnly;
+-(id)initWithPdfViewCtrl:(FSPDFViewCtrl *)pdfViewCtrl options:(NSDictionary*)options;
 
 -(void)registerFullScreenListener:(id<IFullScreenListener>)listener;
 -(void)unregisterFullScreenListener:(id<IFullScreenListener>)listener;

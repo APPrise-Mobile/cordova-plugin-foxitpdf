@@ -103,7 +103,7 @@ static NSString* tmpCommandCallbackID;
 
 + (void)close {
     NSString *tmpCommandCallbackID = [FoxitPdf getTmpCommandCallbackID];
-    CDVPluginResult *pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsString:@"preview success"];
+    CDVPluginResult *pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsString:@"pdf closed"];
     [[FoxitPdf getCordovaCommandDelegate] sendPluginResult:pluginResult callbackId:tmpCommandCallbackID];
     [[FoxitPdf getCordovaViewCtrl] dismissViewControllerAnimated:YES completion:nil];
 }
@@ -163,15 +163,15 @@ static NSString* tmpCommandCallbackID;
     [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
 }
 
-- (void)Preview:(CDVInvokedUrlCommand*)command
+- (void)openPdf:(CDVInvokedUrlCommand*)command
 {
     // URL
     NSString *filePath = [command.arguments objectAtIndex:0];
-    NSString *readOnly = [command.arguments objectAtIndex:1];
+    NSDictionary *options = [command argumentAtIndex:1];
 
     FSPDFViewCtrl *pdfViewCtrl = [[FSPDFViewCtrl alloc] initWithFrame:[[UIScreen mainScreen] bounds]];
     [FoxitPdf setPdfViewCtrl:pdfViewCtrl];
-    ReadFrame *readFrame = [[ReadFrame alloc] initWithPdfViewCtrl:pdfViewCtrl isReadOnly:[readOnly boolValue] == YES];
+    ReadFrame *readFrame = [[ReadFrame alloc] initWithPdfViewCtrl:pdfViewCtrl options:options];
     [FoxitPdf setReadFrame:readFrame];
 
     // check file exist

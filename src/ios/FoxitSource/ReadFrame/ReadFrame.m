@@ -36,7 +36,7 @@
 #import "ReflowModule.h"
 #import "SignatureModule.h"
 #import "PasswordModule.h"
-#import "uiextensions/Signature/SignToolHandler.h"
+#import "SignToolHandler.h"
 
 @interface ReadFrame()
 
@@ -51,6 +51,7 @@
 @property (nonatomic, assign) BOOL isPopoverhidden;
 @property (nonatomic, copy) AnnotAuthorCallBack callBack;
 @property (nonatomic, assign)int currentState;
+@property (nonatomic, strong) NSDictionary* options;
 
 @property (nonatomic, strong) DXPopover *popover;
 
@@ -68,7 +69,7 @@ static ReadFrame* _instance = nil;
     return _instance;
 }
 
--(id)initWithPdfViewCtrl:(FSPDFViewCtrl *)pdfViewCtrl isReadOnly:(BOOL)isReadOnly
+-(id)initWithPdfViewCtrl:(FSPDFViewCtrl *)pdfViewCtrl options:(NSDictionary*)options
 {
     if (self = [super init])
     {
@@ -78,7 +79,8 @@ static ReadFrame* _instance = nil;
         self.stateChangeListeners = [NSMutableArray array];
         self.currentState = STATE_NORMAL;
         self.pdfViewCtrl = pdfViewCtrl;
-        self.isReadOnly = isReadOnly;
+        self.options = options;
+        self.isReadOnly = [[options valueForKey:@"isReadOnly"] boolValue];
         [pdfViewCtrl registerDocEventListener:self];
         [pdfViewCtrl registerLayoutChangedEventListener:self];
 
@@ -86,6 +88,7 @@ static ReadFrame* _instance = nil;
         [self buildItems];
 
         _extensionsMgr = [[UIExtensionsManager alloc] initWithPDFViewControl:pdfViewCtrl];
+
         pdfViewCtrl.extensionsManager = _extensionsMgr;
 
         SignToolHandler* signToolHandler = (SignToolHandler*)[_extensionsMgr getToolHandlerByName:Tool_Signature];
@@ -111,7 +114,10 @@ static ReadFrame* _instance = nil;
 
         NSMutableArray* modules = [NSMutableArray array];
         [modules addObject:[[PageNavigationModule alloc] initWithUIExtensionsManager:_extensionsMgr readFrame:self]];
-        [modules addObject:[[MoreModule alloc] initWithViewCtrl:self.pdfViewCtrl readFrame:self]];
+        BOOL isMoreEnabled = [[options valueForKey:@"isMoreEnabled"] boolValue];
+        if (isMoreEnabled) {
+          [modules addObject:[[MoreModule alloc] initWithViewCtrl:self.pdfViewCtrl readFrame:self]];
+        }
         [modules addObject:[[ReflowModule alloc] initWithUIExtensionsManager:_extensionsMgr readFrame:self]];
         if(!self.isReadOnly) {
             [modules addObject:[[MarkupModule alloc] initWithUIExtensionsManager:_extensionsMgr readFrame:self]];
@@ -126,7 +132,10 @@ static ReadFrame* _instance = nil;
             [modules addObject:[[StampModule alloc] initWithUIExtensionsManager:_extensionsMgr readFrame:self]];
             [modules addObject:[[ReplaceModule alloc] initWithUIExtensionsManager:_extensionsMgr readFrame:self]];
             [modules addObject:[[InsertModule alloc] initWithUIExtensionsManager:_extensionsMgr readFrame:self]];
-            [modules addObject:[[AttachmentModule alloc] initWithUIExtensionsManager:_extensionsMgr readFrame:self]];
+            BOOL isAttachmentEnabled = [[options valueForKey:@"isAttachmentEnabled"] boolValue];
+            if (isAttachmentEnabled) {
+              [modules addObject:[[AttachmentModule alloc] initWithUIExtensionsManager:_extensionsMgr readFrame:self]];
+            }
             [modules addObject:[[SignatureModule alloc] initWithUIExtensionsManager:_extensionsMgr readFrame:self]];
         }
         self.passwordModule = [[PasswordModule alloc] initWithExtensionsManager:_extensionsMgr readFrame:self];
@@ -195,7 +204,7 @@ static ReadFrame* _instance = nil;
     [self.more getContentView].frame = CGRectMake([UIScreen mainScreen].bounds.size.width-300, 0, 300,[UIScreen mainScreen].bounds.size.height);
     [self.more setMenuTitle:NSLocalizedString(@"kMore", nil)];
 
-    self.moreToolsBar = [[MoreAnnotationsBar alloc] init:DEVICE_iPHONE ? CGRectMake(0, screenFrame.size.height-250, screenFrame.size.width, 250) : CGRectMake(0, 0, 300, 250)];
+    self.moreToolsBar = [[MoreAnnotationsBar alloc] init:DEVICE_iPHONE ? CGRectMake(0, screenFrame.size.height-250, screenFrame.size.width, 250) : CGRectMake(0, 0, 300, 250) options:self.options];
 
     [self.pdfViewCtrl addSubview:self.topToolbar.contentView];
     [self.pdfViewCtrl addSubview:self.bottomToolbar.contentView];
@@ -207,7 +216,7 @@ static ReadFrame* _instance = nil;
     if (DEVICE_iPHONE) {
         [self.pdfViewCtrl addSubview:self.moreToolsBar.contentView];
     }
-    self.settingBarController = [[SettingBarController alloc] initWithPDFViewCtrl:self.pdfViewCtrl];
+    self.settingBarController = [[SettingBarController alloc] initWithPDFViewCtrl:self.pdfViewCtrl options:self.options];
 
     self.hiddenEditDoneBar = YES;
     self.hiddenEditBar = YES;
