@@ -14,7 +14,7 @@
 #import <FoxitRDK/FSPDFViewControl.h>
 
 #import "UIExtensionsSharedHeader.h"
-#import "LineToolHandler.h"
+#import "uiextensions/Line/LineToolHandler.h"
 #import "Utility+Demo.h"
 
 @interface LineModule ()

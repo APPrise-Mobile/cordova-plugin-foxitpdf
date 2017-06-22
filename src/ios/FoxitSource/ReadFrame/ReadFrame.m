@@ -36,7 +36,7 @@
 #import "ReflowModule.h"
 #import "SignatureModule.h"
 #import "PasswordModule.h"
-#import "SignToolHandler.h"
+#import "uiextensions/Signature/SignToolHandler.h"
 
 @interface ReadFrame()
 

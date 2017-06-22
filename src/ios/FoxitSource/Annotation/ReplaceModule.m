@@ -14,7 +14,7 @@
 #import <FoxitRDK/FSPDFViewControl.h>
 #import "UIExtensionsSharedHeader.h"
 #import "Utility+Demo.h"
-#import "SelectToolHandler.h"
+#import "uiextensions/SelectTool/SelectToolHandler.h"
 
 @interface ReplaceModule ()
 

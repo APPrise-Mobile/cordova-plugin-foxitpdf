@@ -16,7 +16,7 @@
 #import "Utility+Demo.h"
 
 
-#import "SelectToolHandler.h"
+#import "uiextensions/SelectTool/SelectToolHandler.h"
 
 @interface InsertModule ()
 
