@@ -121,7 +121,10 @@ static ReadFrame* _instance = nil;
         [modules addObject:[[ReflowModule alloc] initWithUIExtensionsManager:_extensionsMgr readFrame:self]];
         if(!self.isReadOnly) {
             [modules addObject:[[MarkupModule alloc] initWithUIExtensionsManager:_extensionsMgr readFrame:self]];
-            [modules addObject:[[NoteModule alloc] initWithUIExtensionsManager:_extensionsMgr readFrame:self]];
+            BOOL isCommentEnabled = [[options valueForKey:@"isCommentEnabled"] boolValue];
+            if (isCommentEnabled) {
+              [modules addObject:[[NoteModule alloc] initWithUIExtensionsManager:_extensionsMgr readFrame:self]];
+            }
             [modules addObject:[[UndoModule alloc] initWithUIExtensionsManager:_extensionsMgr readFrame:self]];
             [modules addObject:[[FormModule alloc] initWithViewCtrl:self.pdfViewCtrl readFrame:self]];
             [modules addObject:[[ShapeModule alloc] initWithUIExtensionsManager:_extensionsMgr readFrame:self]];
@@ -129,14 +132,20 @@ static ReadFrame* _instance = nil;
             [modules addObject:[[PencilModule alloc] initWithUIExtensionsManager:_extensionsMgr readFrame:self]];
             [modules addObject:[[EraseModule alloc] initWithUIExtensionsManager:_extensionsMgr readFrame:self]];
             [modules addObject:[[LineModule alloc] initWithUIExtensionsManager:_extensionsMgr readFrame:self]];
-            [modules addObject:[[StampModule alloc] initWithUIExtensionsManager:_extensionsMgr readFrame:self]];
+            BOOL isStampEnabled = [[options valueForKey:@"isStampEnabled"] boolValue];
+            if (isStampEnabled) {
+              [modules addObject:[[StampModule alloc] initWithUIExtensionsManager:_extensionsMgr readFrame:self]];
+            }
             [modules addObject:[[ReplaceModule alloc] initWithUIExtensionsManager:_extensionsMgr readFrame:self]];
             [modules addObject:[[InsertModule alloc] initWithUIExtensionsManager:_extensionsMgr readFrame:self]];
             BOOL isAttachmentEnabled = [[options valueForKey:@"isAttachmentEnabled"] boolValue];
             if (isAttachmentEnabled) {
               [modules addObject:[[AttachmentModule alloc] initWithUIExtensionsManager:_extensionsMgr readFrame:self]];
             }
-            [modules addObject:[[SignatureModule alloc] initWithUIExtensionsManager:_extensionsMgr readFrame:self]];
+            BOOL isSignaureEnabled = [[options valueForKey:@"isSignaureEnabled"] boolValue];
+            if (isSignaureEnabled) {
+              [modules addObject:[[SignatureModule alloc] initWithUIExtensionsManager:_extensionsMgr readFrame:self]];
+            }
         }
         self.passwordModule = [[PasswordModule alloc] initWithExtensionsManager:_extensionsMgr readFrame:self];
         [modules addObject:self.passwordModule];
@@ -379,11 +388,14 @@ static ReadFrame* _instance = nil;
         };
         [self.bottomToolbar addItem:self.annotItem displayPosition:Position_CENTER];
 
-        UIImage *signatureImg = [UIImage imageNamed:@"signature"];
-        self.signatureItem = [TbBaseItem createItemWithImageAndTitle:NSLocalizedString(@"kSignatureTitle", nil) imageNormal:signatureImg imageSelected:signatureImg imageDisable:signatureImg background:nil imageTextRelation:RELATION_BOTTOM];
-        self.signatureItem.textColor = [UIColor blackColor];
-        self.signatureItem.textFont = [UIFont systemFontOfSize:9.f];
-        [self.bottomToolbar addItem:self.signatureItem displayPosition:Position_CENTER];
+        BOOL isSignaureEnabled = [[self.options valueForKey:@"isSignaureEnabled"] boolValue];
+        if (isSignaureEnabled) {
+          UIImage *signatureImg = [UIImage imageNamed:@"signature"];
+          self.signatureItem = [TbBaseItem createItemWithImageAndTitle:NSLocalizedString(@"kSignatureTitle", nil) imageNormal:signatureImg imageSelected:signatureImg imageDisable:signatureImg background:nil imageTextRelation:RELATION_BOTTOM];
+          self.signatureItem.textColor = [UIColor blackColor];
+          self.signatureItem.textFont = [UIFont systemFontOfSize:9.f];
+          [self.bottomToolbar addItem:self.signatureItem displayPosition:Position_CENTER];
+        }
     }
 
 

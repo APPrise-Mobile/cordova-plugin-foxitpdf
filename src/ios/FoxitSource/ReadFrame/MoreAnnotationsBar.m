@@ -164,12 +164,18 @@
         UIImage *attachmentImage = [UIImage imageNamed:@"annot_attachment_more"];
 
         self.typewriterBtn = [MoreAnnotationsBar createItemWithImageAndTitle:NSLocalizedString(@"kTypewriter", nil) imageNormal:typeriterImage];
-        self.noteBtn = [MoreAnnotationsBar createItemWithImageAndTitle:NSLocalizedString(@"kNote", nil) imageNormal:noteImage];
+        BOOL isCommentEnabled = [[options valueForKey:@"isCommentEnabled"] boolValue];
+        if (isCommentEnabled) {
+          self.noteBtn = [MoreAnnotationsBar createItemWithImageAndTitle:NSLocalizedString(@"kNote", nil) imageNormal:noteImage];
+        }
         BOOL isAttachmentEnabled = [[options valueForKey:@"isAttachmentEnabled"] boolValue];
         if (isAttachmentEnabled) {
           self.attachmentBtn = [MoreAnnotationsBar createItemWithImageAndTitle:NSLocalizedString(@"kAttachment", nil) imageNormal:attachmentImage];
         }
-        self.stampBtn = [MoreAnnotationsBar createItemWithImageAndTitle:NSLocalizedString(@"kPropertyStamps", nil) imageNormal:stampImage];
+        BOOL isStampEnabled = [[options valueForKey:@"isStampEnabled"] boolValue];
+        if (isStampEnabled) {
+          self.stampBtn = [MoreAnnotationsBar createItemWithImageAndTitle:NSLocalizedString(@"kPropertyStamps", nil) imageNormal:stampImage];
+        }
 
         self.typewriterBtn.center = CGPointMake((frame.size.width-20)/8, 210);
         self.noteBtn.center = CGPointMake((frame.size.width-20)/8*3, 210);
