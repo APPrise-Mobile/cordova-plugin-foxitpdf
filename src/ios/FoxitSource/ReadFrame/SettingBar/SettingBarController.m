@@ -34,7 +34,7 @@
         }
 
         self.settingBar = [[SettingBar alloc] initWithPDFViewCtrl:pdfViewCtrl moreSettingBarController:self options:options];
-        self.settingBar.contentView.frame = CGRectMake(0, screenFrame.size.height-250, screenFrame.size.width, DEVICE_iPHONE ? 140 : 200);
+        self.settingBar.contentView.frame = CGRectMake(0, screenFrame.size.height-250, screenFrame.size.width, DEVICE_iPHONE ? 140 : 120);
         self.settingBar.contentView.autoresizingMask = UIViewAutoresizingFlexibleLeftMargin | UIViewAutoresizingFlexibleRightMargin | UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleTopMargin;
 
         [_superView addSubview:self.settingBar.contentView];

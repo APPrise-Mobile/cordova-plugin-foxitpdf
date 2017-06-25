@@ -184,8 +184,10 @@
                 self.reflowBtn.center = CGPointMake((SCREENWIDTH-20)/12, self.reflowBtn.center.y);
 
                 tempWidth += self.reflowBtn.frame.size.width + spaceWidth;
-                self.screenLockBtn.frame = CGRectMake(20 + tempWidth, 180, self.screenLockBtn.frame.size.width, self.screenLockBtn.frame.size.height);
-                self.screenLockBtn.center = CGPointMake((SCREENWIDTH-20)/12*3, self.screenLockBtn.center.y);
+                if (_isScreenLockEnabled) {
+                  self.screenLockBtn.frame = CGRectMake(20 + tempWidth, 180, self.screenLockBtn.frame.size.width, self.screenLockBtn.frame.size.height);
+                  self.screenLockBtn.center = CGPointMake((SCREENWIDTH-20)/12*3, self.screenLockBtn.center.y);
+                }
 
                 [self.contentView addSubview:self.reflowBtn];
                 if (_isScreenLockEnabled) {
@@ -204,8 +206,10 @@
                 self.reflowBtn.center = CGPointMake((scrollWidth-20)/12, self.reflowBtn.center.y);
 
                 tempWidth += self.reflowBtn.frame.size.width + spaceWidth;
-                self.screenLockBtn.frame = CGRectMake(20 + tempWidth, 5, self.screenLockBtn.frame.size.width, self.screenLockBtn.frame.size.height);
-                self.screenLockBtn.center = CGPointMake((scrollWidth-20)/12*3, self.screenLockBtn.center.y);
+                if (_isScreenLockEnabled) {
+                  self.screenLockBtn.frame = CGRectMake(20 + tempWidth, 5, self.screenLockBtn.frame.size.width, self.screenLockBtn.frame.size.height);
+                  self.screenLockBtn.center = CGPointMake((scrollWidth-20)/12*3, self.screenLockBtn.center.y);
+                }
 
                 [self.contentView addSubview:self.scrollView];
                 [self.scrollView addSubview:self.reflowBtn];
@@ -220,32 +224,39 @@
             float spaceWidth = 30;
             if ([UIApplication sharedApplication].statusBarOrientation ==UIInterfaceOrientationLandscapeLeft||[UIApplication sharedApplication].statusBarOrientation ==UIInterfaceOrientationLandscapeRight) {
                 spaceWidth = 60;
+                int buttonMultiplier = 3;
                 float tempWidth = 0;
                 self.singleView_ipad.frame = CGRectMake(20, 20, self.singleView_ipad.frame.size.width, self.singleView_ipad.frame.size.height);
                 self.singleView_ipad.center = CGPointMake(10 + (SCREENWIDTH - 20)/20, self.singleView_ipad.center.y);
 
                 tempWidth += self.singleView_ipad.frame.size.width + spaceWidth;
                 self.continueView_ipad.frame = CGRectMake(20 + tempWidth, 20, self.continueView_ipad.frame.size.width, self.continueView_ipad.frame.size.height);
-                self.continueView_ipad.center = CGPointMake(10 + (SCREENWIDTH - 20)/20 * 3, self.continueView_ipad.center.y);
+                self.continueView_ipad.center = CGPointMake(10 + (SCREENWIDTH - 20)/20 * buttonMultiplier, self.continueView_ipad.center.y);
 
+                buttonMultiplier += 2;
                 tempWidth += self.continueView_ipad.frame.size.width + spaceWidth;
                 self.doubleView_ipad.frame = CGRectMake(20 + tempWidth, 20, self.doubleView_ipad.frame.size.width, self.doubleView_ipad.frame.size.height);
-                self.doubleView_ipad.center = CGPointMake(10 + (SCREENWIDTH - 20)/20 * 5, self.doubleView_ipad.center.y);
+                self.doubleView_ipad.center = CGPointMake(10 + (SCREENWIDTH - 20)/20 * buttonMultiplier, self.doubleView_ipad.center.y);
 
+                buttonMultiplier += 2;
                 tempWidth += self.doubleView_ipad.frame.size.width + spaceWidth;
 
                 if(_isThumbnailEnabled) {
                   self.thumbnailView_ipad.frame = CGRectMake(20 + tempWidth, 20, self.thumbnailView_ipad.frame.size.width, self.thumbnailView_ipad.frame.size.height);
-                  self.thumbnailView_ipad.center = CGPointMake(10 + (SCREENWIDTH - 20)/20 * 7, self.thumbnailView_ipad.center.y);
+                  self.thumbnailView_ipad.center = CGPointMake(10 + (SCREENWIDTH - 20)/20 * buttonMultiplier, self.thumbnailView_ipad.center.y);
 
+                  buttonMultiplier += 2;
                   tempWidth += self.thumbnailView_ipad.frame.size.width + spaceWidth;
                 }
                 self.reflowBtn.frame = CGRectMake(20 + tempWidth, 20, self.reflowBtn.frame.size.width, self.reflowBtn.frame.size.height);
-                self.reflowBtn.center = CGPointMake(10 + (SCREENWIDTH - 20)/20 * 9, self.reflowBtn.center.y);
+                self.reflowBtn.center = CGPointMake(10 + (SCREENWIDTH - 20)/20 * buttonMultiplier, self.reflowBtn.center.y);
 
+                buttonMultiplier += 2;
                 tempWidth += self.reflowBtn.frame.size.width + spaceWidth;
-                self.screenLockBtn.frame = CGRectMake(20 + tempWidth, 20, self.screenLockBtn.frame.size.width, self.screenLockBtn.frame.size.height);
-                self.screenLockBtn.center = CGPointMake(10 + (SCREENWIDTH - 20)/20 * 9, self.screenLockBtn.center.y);
+                if (_isScreenLockEnabled) {
+                  self.screenLockBtn.frame = CGRectMake(20 + tempWidth, 20, self.screenLockBtn.frame.size.width, self.screenLockBtn.frame.size.height);
+                  self.screenLockBtn.center = CGPointMake(10 + (SCREENWIDTH - 20)/20 * buttonMultiplier, self.screenLockBtn.center.y);
+                }
 
                 [self.contentView addSubview:self.singleView_ipad];
                 [self.contentView addSubview:self.continueView_ipad];
@@ -266,6 +277,7 @@
                 _scrollView.showsHorizontalScrollIndicator = NO;
                 _scrollView.bounces = NO;
                 float scrollWidth = 1020;
+                int buttonMultiplier = 3;
                 float tempWidth = 0;
 
                 self.singleView_ipad.frame = CGRectMake(20, 20, self.singleView_ipad.frame.size.width, self.singleView_ipad.frame.size.height);
@@ -273,26 +285,32 @@
 
                 tempWidth += self.singleView_ipad.frame.size.width + spaceWidth;
                 self.continueView_ipad.frame = CGRectMake(20 + tempWidth, 20, self.continueView_ipad.frame.size.width, self.continueView_ipad.frame.size.height);
-                self.continueView_ipad.center = CGPointMake(10 + (scrollWidth - 20)/20 * 3, self.continueView_ipad.center.y);
+                self.continueView_ipad.center = CGPointMake(10 + (scrollWidth - 20)/20 * buttonMultiplier, self.continueView_ipad.center.y);
 
+                buttonMultiplier += 2;
                 tempWidth += self.continueView_ipad.frame.size.width + spaceWidth;
                 self.doubleView_ipad.frame = CGRectMake(20 + tempWidth, 20, self.doubleView_ipad.frame.size.width, self.doubleView_ipad.frame.size.height);
-                self.doubleView_ipad.center = CGPointMake(10 + (scrollWidth - 20)/20 * 5, self.doubleView_ipad.center.y);
+                self.doubleView_ipad.center = CGPointMake(10 + (scrollWidth - 20)/20 * buttonMultiplier, self.doubleView_ipad.center.y);
 
+                buttonMultiplier += 2;
                 tempWidth += self.doubleView_ipad.frame.size.width + spaceWidth;
 
                 if(_isThumbnailEnabled) {
                   self.thumbnailView_ipad.frame = CGRectMake(20 + tempWidth, 20, self.thumbnailView_ipad.frame.size.width, self.thumbnailView_ipad.frame.size.height);
-                  self.thumbnailView_ipad.center = CGPointMake(10 + (scrollWidth - 20)/20 * 7, self.thumbnailView_ipad.center.y);
+                  self.thumbnailView_ipad.center = CGPointMake(10 + (scrollWidth - 20)/20 * buttonMultiplier, self.thumbnailView_ipad.center.y);
 
+                  buttonMultiplier += 2;
                   tempWidth += self.thumbnailView_ipad.frame.size.width + spaceWidth;
                 }
                 self.reflowBtn.frame = CGRectMake(20 + tempWidth, 20, self.reflowBtn.frame.size.width, self.reflowBtn.frame.size.height);
-                self.reflowBtn.center = CGPointMake(10 + (scrollWidth - 20)/20 * 9, self.reflowBtn.center.y);
+                self.reflowBtn.center = CGPointMake(10 + (scrollWidth - 20)/20 * buttonMultiplier, self.reflowBtn.center.y);
 
+                buttonMultiplier += 2;
                 tempWidth += self.reflowBtn.frame.size.width + spaceWidth;
-                self.screenLockBtn.frame = CGRectMake(20 + tempWidth, 20, self.screenLockBtn.frame.size.width, self.screenLockBtn.frame.size.height);
-                self.screenLockBtn.center = CGPointMake(10 + (scrollWidth - 20)/20 * 11, self.screenLockBtn.center.y);
+                if (_isScreenLockEnabled) {
+                  self.screenLockBtn.frame = CGRectMake(20 + tempWidth, 20, self.screenLockBtn.frame.size.width, self.screenLockBtn.frame.size.height);
+                  self.screenLockBtn.center = CGPointMake(10 + (scrollWidth - 20)/20 * buttonMultiplier, self.screenLockBtn.center.y);
+                }
 
                 [self.contentView addSubview:self.scrollView];
                 [self.scrollView addSubview:self.singleView_ipad];
@@ -307,21 +325,22 @@
                 }
             }
 
+            if (_isBrightnessEnabled) {
+                UIView *divideView = [[UIView alloc] initWithFrame:CGRectMake(30, 100, SCREENWIDTH - 60, [Utility realPX:1.0f])];
+                divideView.backgroundColor = [UIColor colorWithRGBHex:0xe6e6e6];
+                divideView.autoresizingMask = UIViewAutoresizingFlexibleLeftMargin | UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleRightMargin;
+                [self.contentView addSubview:divideView];
 
-            UIView *divideView = [[UIView alloc] initWithFrame:CGRectMake(30, 100, SCREENWIDTH - 60, [Utility realPX:1.0f])];
-            divideView.backgroundColor = [UIColor colorWithRGBHex:0xe6e6e6];
-            divideView.autoresizingMask = UIViewAutoresizingFlexibleLeftMargin | UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleRightMargin;
-            [self.contentView addSubview:divideView];
+                UIView *verticalView1 = [[UIView alloc] initWithFrame:CGRectMake(SCREENWIDTH/3 + 40, 130, [Utility realPX:1.0f], 40)];
+                verticalView1.backgroundColor = [UIColor colorWithRGBHex:0xe6e6e6];
+                verticalView1.autoresizingMask = UIViewAutoresizingFlexibleLeftMargin  | UIViewAutoresizingFlexibleRightMargin;;
+                [self.contentView addSubview:verticalView1];
 
-            UIView *verticalView1 = [[UIView alloc] initWithFrame:CGRectMake(SCREENWIDTH/3 + 40, 130, [Utility realPX:1.0f], 40)];
-            verticalView1.backgroundColor = [UIColor colorWithRGBHex:0xe6e6e6];
-            verticalView1.autoresizingMask = UIViewAutoresizingFlexibleLeftMargin  | UIViewAutoresizingFlexibleRightMargin;;
-            [self.contentView addSubview:verticalView1];
-
-            UIView *verticalView2 = [[UIView alloc] initWithFrame:CGRectMake(SCREENWIDTH/3*2 + 40, 130, [Utility realPX:1.0f], 40)];
-            verticalView2.backgroundColor = [UIColor colorWithRGBHex:0xe6e6e6];
-            verticalView2.autoresizingMask = UIViewAutoresizingFlexibleLeftMargin  | UIViewAutoresizingFlexibleRightMargin;
-            [self.contentView addSubview:verticalView2];
+                UIView *verticalView2 = [[UIView alloc] initWithFrame:CGRectMake(SCREENWIDTH/3*2 + 40, 130, [Utility realPX:1.0f], 40)];
+                verticalView2.backgroundColor = [UIColor colorWithRGBHex:0xe6e6e6];
+                verticalView2.autoresizingMask = UIViewAutoresizingFlexibleLeftMargin  | UIViewAutoresizingFlexibleRightMargin;
+                [self.contentView addSubview:verticalView2];
+            }
         }
 
         CGSize titleSize  = [Utility getTextSize:NSLocalizedString(@"kAutoBrightness", nil) fontSize:15.0f maxSize:CGSizeMake(200, 100)];
@@ -750,11 +769,15 @@
             self.reflowBtn.center = CGPointMake((a -20)/12, self.reflowBtn.center.y);
 
             tempWidth += self.reflowBtn.frame.size.width + spaceWidth;
-            self.screenLockBtn.frame = CGRectMake(20 + tempWidth, 180, self.screenLockBtn.frame.size.width, self.screenLockBtn.frame.size.height);
-            self.screenLockBtn.center = CGPointMake((a-20)/12*3, self.screenLockBtn.center.y);
+            if (_isScreenLockEnabled) {
+              self.screenLockBtn.frame = CGRectMake(20 + tempWidth, 180, self.screenLockBtn.frame.size.width, self.screenLockBtn.frame.size.height);
+              self.screenLockBtn.center = CGPointMake((a-20)/12*3, self.screenLockBtn.center.y);
+            }
 
             [self.contentView addSubview:self.reflowBtn];
-            [self.contentView addSubview:self.screenLockBtn];
+            if (_isScreenLockEnabled) {
+                [self.contentView addSubview:self.screenLockBtn];
+            }
         }
         else if(o ==  UIDeviceOrientationPortrait || o == UIDeviceOrientationPortraitUpsideDown)
         {
@@ -772,11 +795,15 @@
             self.reflowBtn.center = CGPointMake((scrollWidth-20)/12, self.reflowBtn.center.y);
 
             tempWidth += self.reflowBtn.frame.size.width + spaceWidth;
-            self.screenLockBtn.frame = CGRectMake(20 + tempWidth, 5, self.screenLockBtn.frame.size.width, self.screenLockBtn.frame.size.height);
-            self.screenLockBtn.center = CGPointMake((scrollWidth-20)/12*3, self.screenLockBtn.center.y);
+            if (_isScreenLockEnabled) {
+              self.screenLockBtn.frame = CGRectMake(20 + tempWidth, 5, self.screenLockBtn.frame.size.width, self.screenLockBtn.frame.size.height);
+              self.screenLockBtn.center = CGPointMake((scrollWidth-20)/12*3, self.screenLockBtn.center.y);
+            }
 
             [self.scrollView addSubview:self.reflowBtn];
-            [self.scrollView addSubview:self.screenLockBtn];
+            if (_isScreenLockEnabled) {
+                [self.scrollView addSubview:self.screenLockBtn];
+            }
         }
 
     }else{
@@ -798,38 +825,49 @@
             [self.screenLockBtn removeFromSuperview];
             [self.scrollView removeFromSuperview];
             spaceWidth = 60;
+            int buttonMultiplier = 3;
             float tempWidth = 0;
             self.singleView_ipad.frame = CGRectMake(20, 20, self.singleView_ipad.frame.size.width, self.singleView_ipad.frame.size.height);
             self.singleView_ipad.center = CGPointMake(10 + (SCREENWIDTH - 20)/20, self.singleView_ipad.center.y);
 
             tempWidth += self.singleView_ipad.frame.size.width + spaceWidth;
             self.continueView_ipad.frame = CGRectMake(20 + tempWidth, 20, self.continueView_ipad.frame.size.width, self.continueView_ipad.frame.size.height);
-            self.continueView_ipad.center = CGPointMake(10 + (SCREENWIDTH - 20)/20 * 3, self.continueView_ipad.center.y);
+            self.continueView_ipad.center = CGPointMake(10 + (SCREENWIDTH - 20)/20 * buttonMultiplier, self.continueView_ipad.center.y);
 
+            buttonMultiplier += 2;
             tempWidth += self.continueView_ipad.frame.size.width + spaceWidth;
             self.doubleView_ipad.frame = CGRectMake(20 + tempWidth, 20, self.doubleView_ipad.frame.size.width, self.doubleView_ipad.frame.size.height);
-            self.doubleView_ipad.center = CGPointMake(10 + (SCREENWIDTH - 20)/20 * 5, self.doubleView_ipad.center.y);
+            self.doubleView_ipad.center = CGPointMake(10 + (SCREENWIDTH - 20)/20 * buttonMultiplier, self.doubleView_ipad.center.y);
 
+            buttonMultiplier += 2;
             tempWidth += self.doubleView_ipad.frame.size.width + spaceWidth;
             if(_isThumbnailEnabled) {
               self.thumbnailView_ipad.frame = CGRectMake(20 + tempWidth, 20, self.thumbnailView_ipad.frame.size.width, self.thumbnailView_ipad.frame.size.height);
-              self.thumbnailView_ipad.center = CGPointMake(10 + (SCREENWIDTH - 20)/20 * 7, self.thumbnailView_ipad.center.y);
+              self.thumbnailView_ipad.center = CGPointMake(10 + (SCREENWIDTH - 20)/20 * buttonMultiplier, self.thumbnailView_ipad.center.y);
 
+                buttonMultiplier += 2;
               tempWidth += self.thumbnailView_ipad.frame.size.width + spaceWidth;
             }
             self.reflowBtn.frame = CGRectMake(20 + tempWidth, 20, self.reflowBtn.frame.size.width, self.reflowBtn.frame.size.height);
-            self.reflowBtn.center = CGPointMake(10 + (SCREENWIDTH - 20)/20 * 9, self.reflowBtn.center.y);
+            self.reflowBtn.center = CGPointMake(10 + (SCREENWIDTH - 20)/20 * buttonMultiplier, self.reflowBtn.center.y);
 
+            buttonMultiplier += 2;
             tempWidth += self.reflowBtn.frame.size.width + spaceWidth;
-            self.screenLockBtn.frame = CGRectMake(20 + tempWidth, 20, self.screenLockBtn.frame.size.width, self.screenLockBtn.frame.size.height);
-            self.screenLockBtn.center = CGPointMake(10 + (SCREENWIDTH - 20)/20 * 11, self.screenLockBtn.center.y);
+            if(_isScreenLockEnabled) {
+              self.screenLockBtn.frame = CGRectMake(20 + tempWidth, 20, self.screenLockBtn.frame.size.width, self.screenLockBtn.frame.size.height);
+              self.screenLockBtn.center = CGPointMake(10 + (SCREENWIDTH - 20)/20 * buttonMultiplier, self.screenLockBtn.center.y);
+            }
 
             [self.contentView addSubview:self.singleView_ipad];
             [self.contentView addSubview:self.continueView_ipad];
             [self.contentView addSubview:self.doubleView_ipad];
-            [self.contentView addSubview:self.thumbnailView_ipad];
+            if(_isThumbnailEnabled) {
+              [self.contentView addSubview:self.thumbnailView_ipad];
+            }
             [self.contentView addSubview:self.reflowBtn];
-            [self.contentView addSubview:self.screenLockBtn];
+            if(_isScreenLockEnabled) {
+              [self.contentView addSubview:self.screenLockBtn];
+            }
 
 
         }else if(o ==  UIDeviceOrientationPortrait || o == UIDeviceOrientationPortraitUpsideDown)
@@ -852,6 +890,7 @@
             _scrollView.showsHorizontalScrollIndicator = NO;
             _scrollView.bounces = NO;
             float scrollWidth = 1020;
+            int buttonMultiplier = 3;
             float tempWidth = 0;
 
             self.singleView_ipad.frame = CGRectMake(20, 20, self.singleView_ipad.frame.size.width, self.singleView_ipad.frame.size.height);
@@ -859,25 +898,31 @@
 
             tempWidth += self.singleView_ipad.frame.size.width + spaceWidth;
             self.continueView_ipad.frame = CGRectMake(20 + tempWidth, 20, self.continueView_ipad.frame.size.width, self.continueView_ipad.frame.size.height);
-            self.continueView_ipad.center = CGPointMake(10 + (scrollWidth - 20)/20 * 3, self.continueView_ipad.center.y);
+            self.continueView_ipad.center = CGPointMake(10 + (scrollWidth - 20)/20 * buttonMultiplier, self.continueView_ipad.center.y);
 
+            buttonMultiplier += 2;
             tempWidth += self.continueView_ipad.frame.size.width + spaceWidth;
             self.doubleView_ipad.frame = CGRectMake(20 + tempWidth, 20, self.doubleView_ipad.frame.size.width, self.doubleView_ipad.frame.size.height);
-            self.doubleView_ipad.center = CGPointMake(10 + (scrollWidth - 20)/20 * 5, self.doubleView_ipad.center.y);
+            self.doubleView_ipad.center = CGPointMake(10 + (scrollWidth - 20)/20 * buttonMultiplier, self.doubleView_ipad.center.y);
 
+            buttonMultiplier += 2;
             tempWidth += self.doubleView_ipad.frame.size.width + spaceWidth;
             if(_isThumbnailEnabled) {
               self.thumbnailView_ipad.frame = CGRectMake(20 + tempWidth, 20, self.thumbnailView_ipad.frame.size.width, self.thumbnailView_ipad.frame.size.height);
-              self.thumbnailView_ipad.center = CGPointMake(10 + (scrollWidth - 20)/20 * 7, self.thumbnailView_ipad.center.y);
+              self.thumbnailView_ipad.center = CGPointMake(10 + (scrollWidth - 20)/20 * buttonMultiplier, self.thumbnailView_ipad.center.y);
 
+              buttonMultiplier += 2;
               tempWidth += self.thumbnailView_ipad.frame.size.width + spaceWidth;
             }
             self.reflowBtn.frame = CGRectMake(20 + tempWidth, 20, self.reflowBtn.frame.size.width, self.reflowBtn.frame.size.height);
-            self.reflowBtn.center = CGPointMake(10 + (scrollWidth - 20)/20 * 9, self.reflowBtn.center.y);
+            self.reflowBtn.center = CGPointMake(10 + (scrollWidth - 20)/20 * buttonMultiplier, self.reflowBtn.center.y);
 
+            buttonMultiplier += 2;
             tempWidth += self.reflowBtn.frame.size.width + spaceWidth;
-            self.screenLockBtn.frame = CGRectMake(20 + tempWidth, 20, self.screenLockBtn.frame.size.width, self.screenLockBtn.frame.size.height);
-            self.screenLockBtn.center = CGPointMake(10 + (scrollWidth - 20)/20 * 11, self.screenLockBtn.center.y);
+            if (_isScreenLockEnabled) {
+              self.screenLockBtn.frame = CGRectMake(20 + tempWidth, 20, self.screenLockBtn.frame.size.width, self.screenLockBtn.frame.size.height);
+              self.screenLockBtn.center = CGPointMake(10 + (scrollWidth - 20)/20 * 11, self.screenLockBtn.center.y);
+            }
 
             [self.contentView addSubview:self.scrollView];
             [self.scrollView addSubview:self.singleView_ipad];
@@ -887,7 +932,9 @@
               [self.scrollView addSubview:self.thumbnailView_ipad];
             }
             [self.scrollView addSubview:self.reflowBtn];
-            [self.scrollView addSubview:self.screenLockBtn];
+            if(_isScreenLockEnabled) {
+              [self.scrollView addSubview:self.screenLockBtn];
+            }
          }
     }
 }

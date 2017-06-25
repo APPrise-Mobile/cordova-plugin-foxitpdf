@@ -398,11 +398,11 @@ static ReadFrame* _instance = nil;
         }
     }
 
-
-    panelItem.contentView.center = CGPointMake(SCREENWIDTH/5, 25);
-    readmodeItem.contentView.center = CGPointMake(SCREENWIDTH*2/5, 25);
-    self.annotItem.contentView.center = CGPointMake(SCREENWIDTH*3/5, 25);
-    self.signatureItem.contentView.center = CGPointMake(SCREENWIDTH*4/5, 25);
+    int sectionWidth = SCREENWIDTH/5;
+    panelItem.contentView.center = CGPointMake((sectionWidth * 2) - sectionWidth / 2, 25);
+    readmodeItem.contentView.center = CGPointMake((sectionWidth * 3) - sectionWidth / 2, 25);
+    self.annotItem.contentView.center = CGPointMake((sectionWidth * 4) - sectionWidth / 2, 25);
+//    self.signatureItem.contentView.center = CGPointMake(SCREENWIDTH*4/5, 25);
 
 }
 
